@@ -78,8 +78,8 @@ namespace BB
 				boardSquares[i]						   = (uint64_t)1 << i;
 				kingLookupTable[i]					   = computeKingPseudoMoves(boardSquares[i]);
 				knightLookupTable[i]				   = computeKnightPseudoMoves(boardSquares[i]);
-				pawnAttackLookupTable[SIDE_WHITE][i] = computePseudoPawnAttacks(boardSquares[i], SIDE_WHITE);
-				pawnAttackLookupTable[SIDE_BLACK][i] = computePseudoPawnAttacks(boardSquares[i], SIDE_BLACK);
+				pawnAttackLookupTable[SIDE_WHITE][i]   = computePseudoPawnAttacks(boardSquares[i], SIDE_WHITE);
+				pawnAttackLookupTable[SIDE_BLACK][i]   = computePseudoPawnAttacks(boardSquares[i], SIDE_BLACK);
 			}
 		}
 	}

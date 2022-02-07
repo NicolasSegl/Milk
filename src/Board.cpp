@@ -109,7 +109,7 @@ void Board::calculateWhiteMoves()
 		MoveData md;
 
 		// these properties will always be true for all moves that are made by the white side
-		md.side				= SIDE_BLACK;
+		md.side				= SIDE_WHITE;
 		md.originSquare		= square;
 
 		if (squareBB & mWhiteKnightsBB)
@@ -155,7 +155,7 @@ void Board::calculateWhiteMoves()
 				}
 			}
 		}
-		else if (squareBB & mWhitePiecesBB)
+		else if (squareBB & mWhitePawnsBB)
 		{
 			Bitboard pawnMoves = MoveGenerator::computePseudoPawnMoves(square, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
 			md.pieceBB = &mWhitePawnsBB;
