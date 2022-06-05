@@ -3,36 +3,9 @@
 #include <cinttypes>
 
 typedef uint64_t Bitboard;
-typedef uint8_t  Byte;
-typedef uint16_t DoubleByte;
-typedef bool Colour;
 
-constexpr int SIDE_WHITE = 0;
-constexpr int SIDE_BLACK = 1;
-
-// position data structure
-struct MoveData
-{
-	// colour bitboards are unnecessary because we have the colour of the side that just moved?
-
-	// these must be pointers for the sake of incremental updating
-	Bitboard* pieceBB;
-	//Bitboard* colourBB;
-
-	// if these are not null pointers then a capture has taken place
-	Bitboard* capturedPieceBB  = nullptr;
-//	Bitboard* capturedColourBB = nullptr;
-
-	Colour side;
-
-	// only a byte long because they are only 0-63
-	Byte  originSquare;
-	Byte  targetSquare;
-
-	// castling rights, en passant, half-move counter... etc
-
-	//DoubleByte data;
-};
+constexpr bool SIDE_WHITE = false;
+constexpr bool SIDE_BLACK = true;
 
 // Bit Board namespace
 namespace BB
@@ -82,30 +55,10 @@ namespace BB
 		const Bitboard cBKingStartBB    = 576460752303423488;
 	}
 
-	namespace LookupTables
-	{
-		// predefined king and knight moves (they are non-sliders. their legal moves are independent of other pieces)
-		extern Bitboard knightLookupTable[64];
-		extern Bitboard kingLookupTable  [64];
-		extern Bitboard rookLookupTable  [64];
-		extern Bitboard bishopLookupTable[64];
-		extern Bitboard pawnAttackLookupTable[2][64]; // 2 because pawns have different moves depending on side
+    extern Bitboard boardSquares[64];
+    extern Bitboard fileClear[8];
+    extern Bitboard rankClear[8];
 
-		// 64 squares, 4096 possible occupancy combinations (2^12) (12 = 6 + 6 = max number of bits a rook can attack)
-		extern Bitboard rookMoveVariations[64][4096];
-		extern Bitboard rookAttackSets[64][4096];
-		extern Bitboard rookMagicNumbers[64];
-
-		extern Bitboard bishopMoveVariations[64][1024];
-        extern Bitboard bishopAttackSets[64][1024];
-        extern Bitboard bishopMagicNumbers[64];
-
-		extern Bitboard boardSquares[64];
-
-		extern Bitboard fileClear[8];
-		extern Bitboard rankClear[8];
-
-		void initialize();
-		void printBitboard(Bitboard bitboard);
-	}
+    void initialize();
+    void printBitboard(Bitboard bitboard);
 }

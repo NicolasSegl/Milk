@@ -13,3 +13,5 @@ int main()
 	board.init();
 	return 0;
 }
+
+// still need to find attack sets so that we can make those moves first ! 

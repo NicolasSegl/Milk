@@ -3,6 +3,8 @@
 #include <vector>
 
 #include "Bitboard.h"
+#include "MoveGenerator.h"
+#include "MoveData.h"
 
 class Board
 {
@@ -34,6 +36,8 @@ private:
 
 	std::vector<MoveData> mWhiteMoves;
 	std::vector<MoveData> mBlackMoves;
+    
+    MoveGenerator mMoveGenerator;
 	
 	// compare which moves are defending a piece of their own :D
 	// by separating all valid moves with those moves that attack pieces, we can hasten the search algorithm. consider moves that take first 

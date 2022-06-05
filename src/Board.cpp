@@ -30,7 +30,8 @@ void Board::setBitboards()
 void Board::init()
 {
 	setBitboards();
-	BB::LookupTables::initialize();
+	BB::initialize();
+    mMoveGenerator.init();
 
 	// maybe make it make a pseudo move for now 
 
@@ -43,32 +44,36 @@ void Board::init()
 	int shift1;
 	std::cin >> shift1;
 	// figure this out, but then realize we can just use boardSquares[shift1]
-	Bitboard moves = MoveGenerator::computePseudoKnightMoves(shift1, mWhitePiecesBB); // assume it's white. 
-	// assume it was a king
+	Bitboard moves = mMoveGenerator.computePseudoPawnMoves(shift1, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
+        
 	std::cout << "to what square (0-63): ";
 	int shift2;
 	std::cin >> shift2;
 
 	calculateWhiteMoves();
 
-	if ((BB::LookupTables::boardSquares[shift2] & moves) != 0)
+	if ((BB::boardSquares[shift2] & moves) != 0)
 	{
 		std::cout << "it was a valid move\n";
 		MoveData md;
 		//md.colourBB = &mWhitePiecesBB;
-		md.pieceBB = &mWhiteKnightsBB;
+		md.pieceBB = &mWhitePawnsBB;
 		md.originSquare = shift1;
 		md.targetSquare = shift2;
 		makeMove(&md);
 		std::cout << std::endl;
 		print();
 	}
+    else
+    {
+        std::cout << "test move failed\n";
+    }
 }
 
 // side is a default value with a value of -1. this value indicates no side was specified and to search all bitboards
 Bitboard* Board::getPieceBitboard(Byte square, Colour side)
 {
-	Bitboard squareBB = BB::LookupTables::boardSquares[square];
+	Bitboard squareBB = BB::boardSquares[square];
 
 	if (side == SIDE_WHITE || side == -1)
 	{
@@ -92,7 +97,6 @@ Bitboard* Board::getPieceBitboard(Byte square, Colour side)
 	return nullptr;
 }
 
-// might be able to do this in one function later ? refactor 
 // make it not a vector? an array with a set size?
 void Board::calculateWhiteMoves()
 {
@@ -101,7 +105,7 @@ void Board::calculateWhiteMoves()
 
 	for (int square = 0; square < 64; square++)
 	{
-		Bitboard squareBB = BB::LookupTables::boardSquares[square];
+		Bitboard squareBB = BB::boardSquares[square];
 
 		if ((squareBB & mWhitePiecesBB) == 0)
 			continue;
@@ -114,12 +118,12 @@ void Board::calculateWhiteMoves()
 
 		if (squareBB & mWhiteKnightsBB)
 		{
-			Bitboard knightMoves = MoveGenerator::computePseudoKnightMoves(square, mWhitePiecesBB);
+			Bitboard knightMoves = mMoveGenerator.computePseudoKnightMoves(square, mWhitePiecesBB);
 			md.pieceBB = &mWhiteKnightsBB;
 
 			for (int knightSquare = 0; knightSquare < 64; knightSquare++)
 			{
-				Bitboard knightMoveSquareBB = BB::LookupTables::boardSquares[knightSquare];
+				Bitboard knightMoveSquareBB = BB::boardSquares[knightSquare];
 
 				if (knightMoves & knightMoveSquareBB)
 				{
@@ -127,7 +131,7 @@ void Board::calculateWhiteMoves()
 					md.capturedPieceBB = nullptr; // reset capture (if previous move captured a piece)
 					
 					// move was a capture
-					if (BB::LookupTables::boardSquares[knightSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[knightSquare] & mBlackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(knightSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
@@ -136,19 +140,19 @@ void Board::calculateWhiteMoves()
 		}
 		else if (squareBB & mWhiteKingBB)
 		{
-			Bitboard kingMoves = MoveGenerator::computePseudoKingMoves(square, mWhitePiecesBB);
+			Bitboard kingMoves = mMoveGenerator.computePseudoKingMoves(square, mWhitePiecesBB);
 			md.pieceBB = &mWhiteKingBB;
 
 			for (int kingSquare = 0; kingSquare < 64; kingSquare++)
 			{
-				Bitboard kingMoveSquareBB = BB::LookupTables::boardSquares[kingSquare];
+				Bitboard kingMoveSquareBB = BB::boardSquares[kingSquare];
 
 				if (kingMoves & kingMoveSquareBB)
 				{
 					md.targetSquare	   = kingSquare;
 					md.capturedPieceBB = nullptr; // reset capture
 
-					if (BB::LookupTables::boardSquares[kingSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[kingSquare] & mBlackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(kingSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
@@ -157,19 +161,19 @@ void Board::calculateWhiteMoves()
 		}
 		else if (squareBB & mWhitePawnsBB)
 		{
-			Bitboard pawnMoves = MoveGenerator::computePseudoPawnMoves(square, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
+			Bitboard pawnMoves = mMoveGenerator.computePseudoPawnMoves(square, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
 			md.pieceBB = &mWhitePawnsBB;
 
 			for (int pawnSquare = 0; pawnSquare < 64; pawnSquare++)
 			{
-				Bitboard pawnMoveSquareBB = BB::LookupTables::boardSquares[pawnSquare];
+				Bitboard pawnMoveSquareBB = BB::boardSquares[pawnSquare];
 
 				if (pawnMoves & pawnMoveSquareBB)
 				{
 					md.targetSquare = pawnSquare;
 					md.capturedPieceBB = nullptr;
 
-					if (BB::LookupTables::boardSquares[pawnSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[pawnSquare] & mBlackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(pawnSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
@@ -189,7 +193,7 @@ bool Board::makeMove(MoveData* moveData)
 	// maybe index an attack table and see if any piece was attacking the tile just moved from. if so, check if there is a check (reupdate attack table)
 	// 
 
-	Bitboard originTarget = BB::LookupTables::boardSquares[moveData->originSquare] ^ BB::LookupTables::boardSquares[moveData->targetSquare];
+	Bitboard originTarget = BB::boardSquares[moveData->originSquare] ^ BB::boardSquares[moveData->targetSquare];
 	*moveData->pieceBB	 ^= originTarget;
 //	*moveData->colourBB	 ^= originTarget;
 
@@ -200,6 +204,8 @@ bool Board::makeMove(MoveData* moveData)
 
 bool Board::unmakeMove(MoveData* moveData)
 {
+    
+    
 	return false;
 }
 
@@ -211,29 +217,30 @@ void Board::print()
 	while (startOfRank >= 0)
 	{
 		// calculates if a bit is set in that digit of the bitboard
-		if ((mWhitePawnsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+        
+		if ((mWhitePawnsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "P";
-		else if ((mBlackPawnsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackPawnsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "p";
-		else if ((mWhiteRooksBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mWhiteRooksBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "R";
-		else if ((mBlackRooksBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackRooksBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "r";
-		else if ((mWhiteKnightsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mWhiteKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "N";
-		else if ((mBlackKnightsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "n";
-		else if ((mWhiteBishopsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mWhiteBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "B";
-		else if ((mBlackBishopsBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "b";
-		else if ((mWhiteQueensBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mWhiteQueensBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "Q";
-		else if ((mBlackQueensBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackQueensBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "q";
-		else if ((mWhiteKingBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mWhiteKingBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "K";
-		else if ((mBlackKingBB & BB::LookupTables::boardSquares[file + startOfRank]) != 0)
+		else if ((mBlackKingBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "k";
 		else
 			std::cout << "0";

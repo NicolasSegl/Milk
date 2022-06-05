@@ -1,18 +1,29 @@
 #pragma once
 
 #include "Bitboard.h"
+#include "MoveData.h"
 
 class MoveGenerator
 {
 private:
-	// can also have predefined pawn attacks 
+    Bitboard mKnightLookupTable[64];
+    Bitboard mKingLookupTable  [64];
+    Bitboard mRookLookupTable  [64];
+    Bitboard mBishopLookupTable[64];
+    Bitboard mPawnAttackLookupTable[2][64]; // 2 because pawns have different moves depending on side
 
+    void initKnightLT(Byte knightLoc);
+    void initKingLT(Byte kingLoc);
+    void initPawnLT(Colour side, Byte pawnLoc);
+    
 public:
-	MoveGenerator() {}
+    MoveGenerator() {}
+    
+    void init();
 
-	static Bitboard computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPieces);
-	static Bitboard computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPieces);
-	static Bitboard computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard occupiedSquares);
+    Bitboard computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPieces);
+    Bitboard computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPieces);
+    Bitboard computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard occupiedSquares);
 
 	// static MoveData** getAllMoves (for one colour)
 };
