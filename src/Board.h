@@ -8,30 +8,31 @@
 
 class Board
 {
-private:
+public:
 	// white piece bitboards
-	Bitboard mWhitePiecesBB;
-	Bitboard mWhitePawnsBB;
-	Bitboard mWhiteRooksBB;
-	Bitboard mWhiteKnightsBB;
-	Bitboard mWhiteBishopsBB;
-	Bitboard mWhiteQueensBB;
-	Bitboard mWhiteKingBB;
+	Bitboard whitePiecesBB;
+	Bitboard whitePawnsBB;
+	Bitboard whiteRooksBB;
+	Bitboard whiteKnightsBB;
+	Bitboard whiteBishopsBB;
+	Bitboard whiteQueensBB;
+	Bitboard whiteKingBB;
 
 	// black piece bitboards
-	Bitboard mBlackPiecesBB;
-	Bitboard mBlackPawnsBB;
-	Bitboard mBlackRooksBB;
-	Bitboard mBlackKnightsBB;
-	Bitboard mBlackBishopsBB;
-	Bitboard mBlackQueensBB;
-	Bitboard mBlackKingBB;
+	Bitboard blackPiecesBB;
+	Bitboard blackPawnsBB;
+	Bitboard blackRooksBB;
+	Bitboard blackKnightsBB;
+	Bitboard blackBishopsBB;
+	Bitboard blackQueensBB;
+	Bitboard blackKingBB;
 
-	Bitboard mOccupiedBB     = 0;
-	Bitboard mEmptyBB        = 0;
+	Bitboard occupiedBB     = 0;
+	Bitboard emptyBB        = 0;
 	// attack/possible moves bb
 	// defence tables
 
+private:
 	Bitboard mAttackTable[64]{ 0 };
 
 	std::vector<MoveData> mWhiteMoves;

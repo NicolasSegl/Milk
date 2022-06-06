@@ -9,22 +9,22 @@ void Board::setBitboards()
 	/* setting starting positions of all pieces on the board */
 
 	// white pieces
-	mWhitePawnsBB   = BB::Constants::cWPawnsStartBB;
-	mWhiteRooksBB   = BB::Constants::cWRooksStartBB;
-	mWhiteKnightsBB = BB::Constants::cWKnightsStartBB;
-	mWhiteBishopsBB = BB::Constants::cWBishopsStartBB;
-	mWhiteQueensBB  = BB::Constants::cWQueensStartBB;
-	mWhiteKingBB    = BB::Constants::cWKingStartBB;
-	mWhitePiecesBB  = mWhitePawnsBB | mWhiteRooksBB | mWhiteKnightsBB | mWhiteBishopsBB | mWhiteQueensBB | mWhiteKingBB;
+	whitePawnsBB   = BB::Constants::cWPawnsStartBB;
+	whiteRooksBB   = BB::Constants::cWRooksStartBB;
+	whiteKnightsBB = BB::Constants::cWKnightsStartBB;
+	whiteBishopsBB = BB::Constants::cWBishopsStartBB;
+	whiteQueensBB  = BB::Constants::cWQueensStartBB;
+	whiteKingBB    = BB::Constants::cWKingStartBB;
+	whitePiecesBB  = whitePawnsBB | whiteRooksBB | whiteKnightsBB | whiteBishopsBB | whiteQueensBB | whiteKingBB;
 
 	// black pieces
-	mBlackPawnsBB   = BB::Constants::cBPawnsStartBB;
-	mBlackRooksBB   = BB::Constants::cBRooksStartBB;
-	mBlackKnightsBB = BB::Constants::cBKnightsStartBB;
-	mBlackBishopsBB = BB::Constants::cBBishopsStartBB;
-	mBlackQueensBB  = BB::Constants::cBQueensStartBB;
-	mBlackKingBB    = BB::Constants::cBKingStartBB;
-	mBlackPiecesBB  = mBlackPawnsBB | mBlackRooksBB | mBlackKnightsBB | mBlackBishopsBB | mBlackQueensBB | mBlackKingBB;
+	blackPawnsBB   = BB::Constants::cBPawnsStartBB;
+	blackRooksBB   = BB::Constants::cBRooksStartBB;
+	blackKnightsBB = BB::Constants::cBKnightsStartBB;
+	blackBishopsBB = BB::Constants::cBBishopsStartBB;
+	blackQueensBB  = BB::Constants::cBQueensStartBB;
+	blackKingBB    = BB::Constants::cBKingStartBB;
+	blackPiecesBB  = blackPawnsBB | blackRooksBB | blackKnightsBB | blackBishopsBB | blackQueensBB | blackKingBB;
 }
 
 void Board::init()
@@ -40,7 +40,7 @@ void Board::init()
 	print();
 
 	// for testing
-	std::cout << "what square (0-63): ";
+	/*std::cout << "what square (0-63): ";
 	int shift1;
 	std::cin >> shift1;
 	// figure this out, but then realize we can just use boardSquares[shift1]
@@ -49,7 +49,7 @@ void Board::init()
 	std::cout << "to what square (0-63): ";
 	int shift2;
 	std::cin >> shift2;
-
+	
 	calculateWhiteMoves();
 
 	if ((BB::boardSquares[shift2] & moves) != 0)
@@ -68,6 +68,7 @@ void Board::init()
     {
         std::cout << "test move failed\n";
     }
+	*/
 }
 
 // side is a default value with a value of -1. this value indicates no side was specified and to search all bitboards
@@ -77,21 +78,21 @@ Bitboard* Board::getPieceBitboard(Byte square, Colour side)
 
 	if (side == SIDE_WHITE || side == -1)
 	{
-		if	    (squareBB & mWhitePawnsBB)	 return &mWhitePawnsBB;
-		else if (squareBB & mWhiteRooksBB)	 return &mWhiteRooksBB;
-		else if (squareBB & mWhiteKnightsBB) return &mWhiteKnightsBB;
-		else if (squareBB & mWhiteBishopsBB) return &mWhiteBishopsBB;
-		else if (squareBB & mWhiteQueensBB)  return &mWhiteQueensBB;
-		else if (squareBB & mWhiteKingBB)	 return &mWhiteKingBB;
+		if	    (squareBB & whitePawnsBB)	 return &whitePawnsBB;
+		else if (squareBB & whiteRooksBB)	 return &whiteRooksBB;
+		else if (squareBB & whiteKnightsBB)  return &whiteKnightsBB;
+		else if (squareBB & whiteBishopsBB)  return &whiteBishopsBB;
+		else if (squareBB & whiteQueensBB)   return &whiteQueensBB;
+		else if (squareBB & whiteKingBB)	 return &whiteKingBB;
 	}
 	if (side == SIDE_BLACK || side == -1)
 	{
-		if		(squareBB & mBlackPawnsBB)	 return &mBlackPawnsBB;
-		else if (squareBB & mBlackRooksBB)	 return &mBlackRooksBB;
-		else if (squareBB & mBlackKnightsBB) return &mBlackKnightsBB;
-		else if (squareBB & mBlackBishopsBB) return &mBlackBishopsBB;
-		else if (squareBB & mBlackQueensBB)  return &mBlackQueensBB;
-		else if (squareBB & mBlackKingBB)	 return &mBlackKingBB;
+		if		(squareBB & blackPawnsBB)	 return &blackPawnsBB;
+		else if (squareBB & blackRooksBB)	 return &blackRooksBB;
+		else if (squareBB & blackKnightsBB)  return &blackKnightsBB;
+		else if (squareBB & blackBishopsBB)  return &blackBishopsBB;
+		else if (squareBB & blackQueensBB)   return &blackQueensBB;
+		else if (squareBB & blackKingBB)	 return &blackKingBB;
 	}
 
 	return nullptr;
@@ -107,7 +108,7 @@ void Board::calculateWhiteMoves()
 	{
 		Bitboard squareBB = BB::boardSquares[square];
 
-		if ((squareBB & mWhitePiecesBB) == 0)
+		if ((squareBB & whitePiecesBB) == 0)
 			continue;
 
 		MoveData md;
@@ -116,10 +117,10 @@ void Board::calculateWhiteMoves()
 		md.side				= SIDE_WHITE;
 		md.originSquare		= square;
 
-		if (squareBB & mWhiteKnightsBB)
+		if (squareBB & whiteKnightsBB)
 		{
-			Bitboard knightMoves = mMoveGenerator.computePseudoKnightMoves(square, mWhitePiecesBB);
-			md.pieceBB = &mWhiteKnightsBB;
+			Bitboard knightMoves = mMoveGenerator.computePseudoKnightMoves(square, whitePiecesBB);
+			md.pieceBB = &whiteKnightsBB;
 
 			for (int knightSquare = 0; knightSquare < 64; knightSquare++)
 			{
@@ -131,17 +132,17 @@ void Board::calculateWhiteMoves()
 					md.capturedPieceBB = nullptr; // reset capture (if previous move captured a piece)
 					
 					// move was a capture
-					if (BB::boardSquares[knightSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[knightSquare] & blackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(knightSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
 				}
 			}
 		}
-		else if (squareBB & mWhiteKingBB)
+		else if (squareBB & whiteKingBB)
 		{
-			Bitboard kingMoves = mMoveGenerator.computePseudoKingMoves(square, mWhitePiecesBB);
-			md.pieceBB = &mWhiteKingBB;
+			Bitboard kingMoves = mMoveGenerator.computePseudoKingMoves(square, whitePiecesBB);
+			md.pieceBB = &whiteKingBB;
 
 			for (int kingSquare = 0; kingSquare < 64; kingSquare++)
 			{
@@ -152,17 +153,17 @@ void Board::calculateWhiteMoves()
 					md.targetSquare	   = kingSquare;
 					md.capturedPieceBB = nullptr; // reset capture
 
-					if (BB::boardSquares[kingSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[kingSquare] & blackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(kingSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
 				}
 			}
 		}
-		else if (squareBB & mWhitePawnsBB)
+		else if (squareBB & whitePawnsBB)
 		{
-			Bitboard pawnMoves = mMoveGenerator.computePseudoPawnMoves(square, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
-			md.pieceBB = &mWhitePawnsBB;
+			Bitboard pawnMoves = mMoveGenerator.computePseudoPawnMoves(square, SIDE_WHITE, blackPiecesBB, occupiedBB);
+			md.pieceBB = &whitePawnsBB;
 
 			for (int pawnSquare = 0; pawnSquare < 64; pawnSquare++)
 			{
@@ -173,7 +174,7 @@ void Board::calculateWhiteMoves()
 					md.targetSquare = pawnSquare;
 					md.capturedPieceBB = nullptr;
 
-					if (BB::boardSquares[pawnSquare] & mBlackPiecesBB)
+					if (BB::boardSquares[pawnSquare] & blackPiecesBB)
 						md.capturedPieceBB = getPieceBitboard(pawnSquare, SIDE_BLACK);
 
 					mWhiteMoves.push_back(md);
@@ -218,29 +219,29 @@ void Board::print()
 	{
 		// calculates if a bit is set in that digit of the bitboard
         
-		if ((mWhitePawnsBB & BB::boardSquares[file + startOfRank]) != 0)
+		if ((whitePawnsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "P";
-		else if ((mBlackPawnsBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackPawnsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "p";
-		else if ((mWhiteRooksBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((whiteRooksBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "R";
-		else if ((mBlackRooksBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackRooksBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "r";
-		else if ((mWhiteKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((whiteKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "N";
-		else if ((mBlackKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "n";
-		else if ((mWhiteBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((whiteBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "B";
-		else if ((mBlackBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "b";
-		else if ((mWhiteQueensBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((whiteQueensBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "Q";
-		else if ((mBlackQueensBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackQueensBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "q";
-		else if ((mWhiteKingBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((whiteKingBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "K";
-		else if ((mBlackKingBB & BB::boardSquares[file + startOfRank]) != 0)
+		else if ((blackKingBB & BB::boardSquares[file + startOfRank]) != 0)
 			std::cout << "k";
 		else
 			std::cout << "0";
