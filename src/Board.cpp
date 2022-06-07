@@ -36,9 +36,6 @@ void Board::init()
 	// maybe make it make a pseudo move for now 
 
 	// in the future we would have a pointer to move-piece as a bitboard ptr. refer to https://www.chessprogramming.org/General_Setwise_Operations#UpdateByMove
-	
-	print();
-
 	// for testing
 	/*std::cout << "what square (0-63): ";
 	int shift1;
@@ -208,51 +205,4 @@ bool Board::unmakeMove(MoveData* moveData)
     
     
 	return false;
-}
-
-void Board::print()
-{
-	// printing right to left 
-	int file = 0;
-	int startOfRank = 56; // eighth rank
-	while (startOfRank >= 0)
-	{
-		// calculates if a bit is set in that digit of the bitboard
-        
-		if ((whitePawnsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "P";
-		else if ((blackPawnsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "p";
-		else if ((whiteRooksBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "R";
-		else if ((blackRooksBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "r";
-		else if ((whiteKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "N";
-		else if ((blackKnightsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "n";
-		else if ((whiteBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "B";
-		else if ((blackBishopsBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "b";
-		else if ((whiteQueensBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "Q";
-		else if ((blackQueensBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "q";
-		else if ((whiteKingBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "K";
-		else if ((blackKingBB & BB::boardSquares[file + startOfRank]) != 0)
-			std::cout << "k";
-		else
-			std::cout << "0";
-
-		if ((file + 1 + startOfRank) % 8 == 0)
-		{
-			std::cout << std::endl;
-			file = 0;
-			startOfRank -= 8;
-		}
-		else
-			file++;
-	}
 }

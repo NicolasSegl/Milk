@@ -58,8 +58,6 @@ private:
 
 	// a move list. each move has all the data tho, to unmake it. 
 
-	void print();
-
 public:
 	Board() {}
 
@@ -69,6 +67,6 @@ public:
 
 	void calculateWhiteMoves();
 
-	std::vector<MoveData>* getWhiteMoves() { return &mWhiteMoves; }
+	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves; }
 };
 

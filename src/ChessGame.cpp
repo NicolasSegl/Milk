@@ -32,6 +32,29 @@ void ChessGame::runGUI()
 
 				break;
 			}
+			case UserInput::InputType::GameClose:
+			{
+				exit(0);
+				break;
+			}
+		}
+
+		std::cout << "origin square: " << mOriginSquare << std::endl;
+		std::cout << "target square: " << mTargetSquare << std::endl;
+
+		if (mTargetSquare >= 0 && mOriginSquare >= 0)
+		{
+			mBoard.calculateWhiteMoves();
+			std::vector<MoveData>& moves = mBoard.getWhiteMoves();
+
+			for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++)
+			{
+				if (moves[moveIndex].originSquare == mOriginSquare && moves[moveIndex].targetSquare == mTargetSquare)
+					mBoard.makeMove(&moves[moveIndex]);
+			}
+
+			mOriginSquare = -1;
+			mTargetSquare = -1;
 		}
 	}
 }

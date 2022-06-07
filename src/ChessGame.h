@@ -14,7 +14,7 @@ private:
 	Colour mSideToMove;
 	ChessGUI mGUI;
 
-	Bitboard mOriginSquare, mTargetSquare;
+	int mOriginSquare, mTargetSquare;
 
 public:
 	ChessGame();
