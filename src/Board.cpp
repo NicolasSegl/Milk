@@ -113,6 +113,7 @@ void Board::calculateWhiteMoves()
 		// these properties will always be true for all moves that are made by the white side
 		md.side				= SIDE_WHITE;
 		md.originSquare		= square;
+        md.colourBB         = &whitePiecesBB;
 
 		if (squareBB & whiteKnightsBB)
 		{
@@ -193,7 +194,9 @@ bool Board::makeMove(MoveData* moveData)
 
 	Bitboard originTarget = BB::boardSquares[moveData->originSquare] ^ BB::boardSquares[moveData->targetSquare];
 	*moveData->pieceBB	 ^= originTarget;
-//	*moveData->colourBB	 ^= originTarget;
+	*moveData->colourBB	 ^= originTarget;
+    occupiedBB           ^= originTarget;
+    emptyBB              ^= originTarget;
 
 	// also updated all occupied pieces bitboard
 

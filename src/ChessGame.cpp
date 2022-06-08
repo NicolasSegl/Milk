@@ -28,7 +28,14 @@ void ChessGame::runGUI()
 				if (mOriginSquare >= 0)
 					mTargetSquare = userInput.squareLoc;
 				else
-					mOriginSquare = userInput.squareLoc;
+                {
+                    if ((mSideToMove == SIDE_WHITE && (mBoard.whitePiecesBB & BB::boardSquares[userInput.squareLoc])) ||
+                        (mSideToMove == SIDE_BLACK && (mBoard.blackPiecesBB & BB::boardSquares[userInput.squareLoc])))
+                    {
+                        std::cout << "potential origin square SPOTTED\n";
+                        mOriginSquare = userInput.squareLoc;
+                    }
+                }
 
 				break;
 			}
@@ -38,9 +45,6 @@ void ChessGame::runGUI()
 				break;
 			}
 		}
-
-		std::cout << "origin square: " << mOriginSquare << std::endl;
-		std::cout << "target square: " << mTargetSquare << std::endl;
 
 		if (mTargetSquare >= 0 && mOriginSquare >= 0)
 		{
@@ -53,6 +57,9 @@ void ChessGame::runGUI()
 					mBoard.makeMove(&moves[moveIndex]);
 			}
 
+            std::cout << "origin square: " << mOriginSquare << std::endl;
+            std::cout << "target square: " << mTargetSquare << std::endl;
+            
 			mOriginSquare = -1;
 			mTargetSquare = -1;
 		}

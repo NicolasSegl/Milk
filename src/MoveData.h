@@ -11,7 +11,7 @@ struct MoveData
 
     // these must be pointers for the sake of incremental updating
     Bitboard* pieceBB;
-    //Bitboard* colourBB;
+    Bitboard* colourBB;
 
     // if these are not null pointers then a capture has taken place
     Bitboard* capturedPieceBB  = nullptr;
