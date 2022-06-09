@@ -16,6 +16,8 @@ private:
 
 	int mOriginSquare, mTargetSquare;
 
+	void moveReset();
+
 public:
 	ChessGame();
 

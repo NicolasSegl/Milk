@@ -9,6 +9,23 @@
 class Board
 {
 public:
+	enum PieceType
+	{
+		WHITE_PAWN,
+		WHITE_ROOK,
+		WHITE_BISHOP,
+		WHITE_QUEEN,
+		WHITE_KNIGHT,
+		WHITE_KING,
+
+		BLACK_PAWN,
+		BLACK_ROOK,
+		BLACK_BISHOP,
+		BLACK_QUEEN,
+		BLACK_KNIGHT,
+		BLACK_KING
+	};
+
 	// white piece bitboards
 	Bitboard whitePiecesBB;
 	Bitboard whitePawnsBB;
@@ -57,6 +74,8 @@ private:
 	// having an occupied bitboard might make checking move validity. easier. first check if that square is occupied, then the colour, then the specific piece
 
 	// a move list. each move has all the data tho, to unmake it. 
+
+	void calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector);
 
 public:
 	Board() {}

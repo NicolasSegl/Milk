@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "Board.h"
+#include "MoveData.h"
 
 struct UserInput
 {
@@ -19,33 +20,15 @@ struct UserInput
 class ChessGUI
 {
 private:
-	enum SpriteType
-	{
-		WHITE_PAWN,
-		WHITE_ROOK,
-		WHITE_BISHOP,
-		WHITE_QUEEN,
-		WHITE_KNIGHT,
-		WHITE_KING,
-
-		BLACK_PAWN,
-		BLACK_ROOK,
-		BLACK_BISHOP,
-		BLACK_QUEEN,
-		BLACK_KNIGHT,
-		BLACK_KING,
-	};
-
-
 	sf::RenderWindow mWindow;
 	sf::RectangleShape mBoardSquares[64];
 
 	sf::Sprite mPieceSprites[12];
 
-	int mWindowWidth, mWindowHeight, mSquareSize;
-	sf::Color mDarkColour, mLightColour;
+	int mWindowWidth, mWindowHeight, mSquareSize;;
+	sf::Color mDarkColour, mLightColour, mSelectColour;
 
-	void drawPiece(sf::Vector2f pos, SpriteType spriteType);
+	void drawPiece(sf::Vector2f pos, Board::PieceType spriteType);
 
 public:
 	ChessGUI();
@@ -54,5 +37,7 @@ public:
 
 	UserInput getUserInput(); // have this return a special struct or an enum
 	void updateBoard(Board* board);
+	void setMoveColours(MoveData* md);
+	void setSelectedSquare(Byte square);
 };
 

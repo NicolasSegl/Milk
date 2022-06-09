@@ -31,41 +31,7 @@ void Board::init()
 {
 	setBitboards();
 	BB::initialize();
-    mMoveGenerator.init();
-
-	// maybe make it make a pseudo move for now 
-
-	// in the future we would have a pointer to move-piece as a bitboard ptr. refer to https://www.chessprogramming.org/General_Setwise_Operations#UpdateByMove
-	// for testing
-	/*std::cout << "what square (0-63): ";
-	int shift1;
-	std::cin >> shift1;
-	// figure this out, but then realize we can just use boardSquares[shift1]
-	Bitboard moves = mMoveGenerator.computePseudoPawnMoves(shift1, SIDE_WHITE, mBlackPiecesBB, mOccupiedBB);
-        
-	std::cout << "to what square (0-63): ";
-	int shift2;
-	std::cin >> shift2;
-	
-	calculateWhiteMoves();
-
-	if ((BB::boardSquares[shift2] & moves) != 0)
-	{
-		std::cout << "it was a valid move\n";
-		MoveData md;
-		//md.colourBB = &mWhitePiecesBB;
-		md.pieceBB = &mWhitePawnsBB;
-		md.originSquare = shift1;
-		md.targetSquare = shift2;
-		makeMove(&md);
-		std::cout << std::endl;
-		print();
-	}
-    else
-    {
-        std::cout << "test move failed\n";
-    }
-	*/
+	mMoveGenerator.init();
 }
 
 // side is a default value with a value of -1. this value indicates no side was specified and to search all bitboards
@@ -103,6 +69,10 @@ void Board::calculateWhiteMoves()
 
 	for (int square = 0; square < 64; square++)
 	{
+		// oh its only adding one move per piece when each piece can actually make a fuck ton of moves
+		calculatePieceMoves(SIDE_WHITE, square, mWhiteMoves);
+
+		/*
 		Bitboard squareBB = BB::boardSquares[square];
 
 		if ((squareBB & whitePiecesBB) == 0)
@@ -178,12 +148,57 @@ void Board::calculateWhiteMoves()
 					mWhiteMoves.push_back(md);
 				}
 			}
-		}
+		}*/
 	}
 
 	// attack board by taking the moves of a piece on that square, and & it with opposite colour 
 	// attack boards might be more for evaluation than move generation. checking pins and defend maps
 	// selection sort as we move to put more important moves near the start of the vector 
+}
+
+void Board::calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector)
+{
+	MoveData md;
+	if (Side == SIDE_WHITE)
+	{
+		md.colourBB		    = &whitePiecesBB;
+		md.capturedColourBB = &blackPiecesBB; // if a capture occurred, it would be a black piece
+	}
+	else
+	{
+		md.colourBB		    = &blackPiecesBB;
+		md.capturedColourBB = &whitePiecesBB;
+	}
+
+	if (BB::boardSquares[originSquare] & *md.colourBB)
+	{
+		md.side = Side;
+		md.originSquare = originSquare;
+		Bitboard moves = 0;
+		Bitboard* pieceBBPtr = getPieceBitboard(originSquare, Side);
+		Bitboard pieceBB = *pieceBBPtr;
+
+		md.pieceBB = pieceBBPtr;
+
+		if ((pieceBB & whiteKnightsBB) || (pieceBB & blackKnightsBB))  moves = mMoveGenerator.computePseudoKnightMoves(originSquare, *md.colourBB);
+		else if ((pieceBB & whiteKingBB) || (pieceBB & blackKingBB))   moves = mMoveGenerator.computePseudoKingMoves(originSquare, *md.colourBB);
+		else if ((pieceBB & whitePawnsBB) || (pieceBB & blackPawnsBB)) moves = mMoveGenerator.computePseudoPawnMoves(originSquare, Side, *md.capturedColourBB, occupiedBB);
+
+		for (int square = 0; square < 64; square++)
+		{
+			if (moves & BB::boardSquares[square])
+			{
+				md.targetSquare    = square;
+				md.capturedPieceBB = nullptr;
+
+				if (BB::boardSquares[square] & *md.capturedColourBB)
+					md.capturedPieceBB = getPieceBitboard(square, SIDE_BLACK);
+
+				moveVector.push_back(md);
+			}
+		}
+
+	}
 }
 
 bool Board::makeMove(MoveData* moveData)
@@ -200,6 +215,7 @@ bool Board::makeMove(MoveData* moveData)
 
 	// also updated all occupied pieces bitboard
 
+	return true;
 	return false;
 }
 

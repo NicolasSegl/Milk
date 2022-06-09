@@ -5,7 +5,11 @@
 ChessGame::ChessGame()
 {
 	mBoard.init();
+	moveReset();
+}
 
+void ChessGame::moveReset()
+{
 	mOriginSquare = -1;
 	mTargetSquare = -1;
 }
@@ -23,19 +27,26 @@ void ChessGame::runGUI()
 
 		switch (userInput.inputType)
 		{
+			// make it so that you reselect the origin square. if its the same side you just picked
 			case UserInput::InputType::SquareSelect:
 			{
 				if (mOriginSquare >= 0)
+				{
+					if (BB::boardSquares[userInput.squareLoc] )
 					mTargetSquare = userInput.squareLoc;
+				}
 				else
                 {
                     if ((mSideToMove == SIDE_WHITE && (mBoard.whitePiecesBB & BB::boardSquares[userInput.squareLoc])) ||
                         (mSideToMove == SIDE_BLACK && (mBoard.blackPiecesBB & BB::boardSquares[userInput.squareLoc])))
                     {
-                        std::cout << "potential origin square SPOTTED\n";
                         mOriginSquare = userInput.squareLoc;
+						mGUI.setSelectedSquare(userInput.squareLoc);
                     }
                 }
+
+				if (mOriginSquare == mTargetSquare)
+					mTargetSquare = -1;
 
 				break;
 			}
@@ -54,14 +65,11 @@ void ChessGame::runGUI()
 			for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++)
 			{
 				if (moves[moveIndex].originSquare == mOriginSquare && moves[moveIndex].targetSquare == mTargetSquare)
-					mBoard.makeMove(&moves[moveIndex]);
+					if (mBoard.makeMove(&moves[moveIndex]))
+						mGUI.setMoveColours(&moves[moveIndex]);
 			}
-
-            std::cout << "origin square: " << mOriginSquare << std::endl;
-            std::cout << "target square: " << mTargetSquare << std::endl;
             
-			mOriginSquare = -1;
-			mTargetSquare = -1;
+			moveReset();
 		}
 	}
 }

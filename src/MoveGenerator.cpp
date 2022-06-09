@@ -62,7 +62,7 @@ Bitboard MoveGenerator::computePseudoKingMoves(Byte pieceCoord, Bitboard friendl
 Bitboard MoveGenerator::computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPieces)
 {
 	// same process as above :D
-    return mKnightLookupTable[pieceCoord];// & ~friendlyPieces;
+    return mKnightLookupTable[pieceCoord] & ~friendlyPieces;
 }
 
 Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard occupiedSquares)

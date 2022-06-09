@@ -6,8 +6,9 @@ const int SPRITE_SIZE = 80; // pixels
 
 ChessGUI::ChessGUI()
 {
-	mDarkColour = sf::Color(242, 206, 162);
-	mLightColour = sf::Color(245, 245, 245);
+	mDarkColour			  = sf::Color(242, 206, 162);
+	mLightColour		  = sf::Color(245, 245, 245);
+	mSelectColour		  = sf::Color(196, 228, 157);
 
 	static sf::Image spriteSheetImage;
 	if (!spriteSheetImage.loadFromFile("pieceSpriteSheet.png"))
@@ -87,11 +88,6 @@ UserInput ChessGUI::getUserInput()
 					input.inputType = UserInput::InputType::SquareSelect;
 					input.squareLoc = my / mSquareSize * 8 + mx / mSquareSize;
 
-					if (input.squareLoc >= 0 && input.squareLoc < 64)
-					{
-						//mBoardSquares[64 - input.squareLoc].set
-					}
-
 					return input;
 				}
 			}
@@ -99,15 +95,51 @@ UserInput ChessGUI::getUserInput()
 	}
 }
 
-void ChessGUI::drawPiece(sf::Vector2f pos, SpriteType spriteType)
+void ChessGUI::setSelectedSquare(Byte square)
+{
+	static short lastSelectedSquare = -1;
+	static sf::Color lastSelectedColour;
+
+	if (lastSelectedSquare > 0)
+	{
+		mBoardSquares[63 - lastSelectedSquare].setFillColor(lastSelectedColour);
+		lastSelectedSquare = square;
+		lastSelectedColour = mBoardSquares[63 - square].getFillColor();
+	}
+
+	mBoardSquares[63 - square].setFillColor(mSelectColour);
+}
+
+void ChessGUI::drawPiece(sf::Vector2f pos, Board::PieceType spriteType)
 {
 	mPieceSprites[spriteType].setPosition(pos);
 	mWindow.draw(mPieceSprites[spriteType]);
 }
 
+void ChessGUI::setMoveColours(MoveData* md)
+{
+	static sf::Color oldColours[2] = { sf::Color(255, 255, 255), sf::Color(255, 255, 255) };
+	static Byte oldMoveSquares[2];
+
+	// if the first move has been made and oldColours have been initialized, change them back after the move ! 
+	if (oldColours[0] == mDarkColour || oldColours[0] == mLightColour)
+	{
+		mBoardSquares[oldMoveSquares[0]].setFillColor(oldColours[0]);
+		mBoardSquares[oldMoveSquares[1]].setFillColor(oldColours[1]);
+	}
+
+	oldMoveSquares[0] = 63 - md->originSquare;
+	oldMoveSquares[1] = 63 - md->targetSquare;
+	oldColours[0] = mBoardSquares[md->originSquare].getFillColor();
+	oldColours[1] = mBoardSquares[md->targetSquare].getFillColor();
+	mBoardSquares[63 - md->targetSquare].setFillColor(mSelectColour);
+	mBoardSquares[63 - md->originSquare].setFillColor(mSelectColour);
+}
+
 void ChessGUI::updateBoard(Board* board)
 {
 	mWindow.clear();
+
 	for (int square = 0; square < 64; square++)
 		mWindow.draw(mBoardSquares[square]);
 
@@ -119,19 +151,19 @@ void ChessGUI::updateBoard(Board* board)
 								   (7 - bit / 8) * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2); // they all start top left 
 		// try for bit = 0
 
-		if		(board->whitePawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, WHITE_PAWN);
-		else if (board->whiteKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, WHITE_KING);
-		else if (board->whiteRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, WHITE_ROOK);
-		else if (board->whiteBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, WHITE_BISHOP);
-		else if (board->whiteQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, WHITE_QUEEN);
-		else if (board->whiteKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, WHITE_KNIGHT);
+		if		(board->whitePawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_PAWN);
+		else if (board->whiteKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_KING);
+		else if (board->whiteRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::WHITE_ROOK);
+		else if (board->whiteBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_BISHOP);
+		else if (board->whiteQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::WHITE_QUEEN);
+		else if (board->whiteKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_KNIGHT);
 
-		if (board->blackPawnsBB & BB::boardSquares[bit])		drawPiece(translatedPos, BLACK_PAWN);
-		else if (board->blackKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, BLACK_KING);
-		else if (board->blackRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, BLACK_ROOK);
-		else if (board->blackBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, BLACK_BISHOP);
-		else if (board->blackQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, BLACK_QUEEN);
-		else if (board->blackKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, BLACK_KNIGHT);
+		if (board->blackPawnsBB & BB::boardSquares[bit])		drawPiece(translatedPos, Board::BLACK_PAWN);
+		else if (board->blackKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::BLACK_KING);
+		else if (board->blackRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::BLACK_ROOK);
+		else if (board->blackBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_BISHOP);
+		else if (board->blackQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::BLACK_QUEEN);
+		else if (board->blackKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_KNIGHT);
 	}
 
 	mWindow.display();

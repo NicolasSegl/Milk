@@ -15,7 +15,7 @@ struct MoveData
 
     // if these are not null pointers then a capture has taken place
     Bitboard* capturedPieceBB  = nullptr;
-//    Bitboard* capturedColourBB = nullptr;
+    Bitboard* capturedColourBB = nullptr;
 
     Colour side;
 
