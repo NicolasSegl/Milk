@@ -61,105 +61,37 @@ Bitboard* Board::getPieceBitboard(Byte square, Colour side)
 	return nullptr;
 }
 
+void Board::calculateBlackMoves()
+{
+	mBlackMoves.clear();
+	mBlackMoves.reserve(100);
+
+	for (int square = 0; square < 64; square++)
+		calculatePieceMoves(SIDE_BLACK, square, mBlackMoves);
+}
+
 // make it not a vector? an array with a set size?
+// this might speed it up considerably no?
+// and then we could search through this array of moves until an invalid one is met, and then it would go on to the next one?
+
 void Board::calculateWhiteMoves()
 {
 	mWhiteMoves.clear();
-	int captureIndex = 0;
+	mWhiteMoves.reserve(100); // to minimize the number of vector reallocations necessary
 
 	for (int square = 0; square < 64; square++)
-	{
-		// oh its only adding one move per piece when each piece can actually make a fuck ton of moves
 		calculatePieceMoves(SIDE_WHITE, square, mWhiteMoves);
 
-		/*
-		Bitboard squareBB = BB::boardSquares[square];
-
-		if ((squareBB & whitePiecesBB) == 0)
-			continue;
-
-		MoveData md;
-
-		// these properties will always be true for all moves that are made by the white side
-		md.side				= SIDE_WHITE;
-		md.originSquare		= square;
-        md.colourBB         = &whitePiecesBB;
-
-		if (squareBB & whiteKnightsBB)
-		{
-			Bitboard knightMoves = mMoveGenerator.computePseudoKnightMoves(square, whitePiecesBB);
-			md.pieceBB = &whiteKnightsBB;
-
-			for (int knightSquare = 0; knightSquare < 64; knightSquare++)
-			{
-				Bitboard knightMoveSquareBB = BB::boardSquares[knightSquare];
-
-				if (knightMoves & knightMoveSquareBB)
-				{
-					md.targetSquare    = knightSquare;
-					md.capturedPieceBB = nullptr; // reset capture (if previous move captured a piece)
-					
-					// move was a capture
-					if (BB::boardSquares[knightSquare] & blackPiecesBB)
-						md.capturedPieceBB = getPieceBitboard(knightSquare, SIDE_BLACK);
-
-					mWhiteMoves.push_back(md);
-				}
-			}
-		}
-		else if (squareBB & whiteKingBB)
-		{
-			Bitboard kingMoves = mMoveGenerator.computePseudoKingMoves(square, whitePiecesBB);
-			md.pieceBB = &whiteKingBB;
-
-			for (int kingSquare = 0; kingSquare < 64; kingSquare++)
-			{
-				Bitboard kingMoveSquareBB = BB::boardSquares[kingSquare];
-
-				if (kingMoves & kingMoveSquareBB)
-				{
-					md.targetSquare	   = kingSquare;
-					md.capturedPieceBB = nullptr; // reset capture
-
-					if (BB::boardSquares[kingSquare] & blackPiecesBB)
-						md.capturedPieceBB = getPieceBitboard(kingSquare, SIDE_BLACK);
-
-					mWhiteMoves.push_back(md);
-				}
-			}
-		}
-		else if (squareBB & whitePawnsBB)
-		{
-			Bitboard pawnMoves = mMoveGenerator.computePseudoPawnMoves(square, SIDE_WHITE, blackPiecesBB, occupiedBB);
-			md.pieceBB = &whitePawnsBB;
-
-			for (int pawnSquare = 0; pawnSquare < 64; pawnSquare++)
-			{
-				Bitboard pawnMoveSquareBB = BB::boardSquares[pawnSquare];
-
-				if (pawnMoves & pawnMoveSquareBB)
-				{
-					md.targetSquare = pawnSquare;
-					md.capturedPieceBB = nullptr;
-
-					if (BB::boardSquares[pawnSquare] & blackPiecesBB)
-						md.capturedPieceBB = getPieceBitboard(pawnSquare, SIDE_BLACK);
-
-					mWhiteMoves.push_back(md);
-				}
-			}
-		}*/
-	}
 
 	// attack board by taking the moves of a piece on that square, and & it with opposite colour 
 	// attack boards might be more for evaluation than move generation. checking pins and defend maps
 	// selection sort as we move to put more important moves near the start of the vector 
 }
 
-void Board::calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector)
+void Board::calculatePieceMoves(Colour side, Byte originSquare, std::vector<MoveData>& moveVector)
 {
 	MoveData md;
-	if (Side == SIDE_WHITE)
+	if (side == SIDE_WHITE)
 	{
 		md.colourBB		    = &whitePiecesBB;
 		md.capturedColourBB = &blackPiecesBB; // if a capture occurred, it would be a black piece
@@ -172,17 +104,20 @@ void Board::calculatePieceMoves(Colour Side, Byte originSquare, std::vector<Move
 
 	if (BB::boardSquares[originSquare] & *md.colourBB)
 	{
-		md.side = Side;
+		md.side = side;
 		md.originSquare = originSquare;
 		Bitboard moves = 0;
-		Bitboard* pieceBBPtr = getPieceBitboard(originSquare, Side);
+		Bitboard* pieceBBPtr = getPieceBitboard(originSquare, side);
 		Bitboard pieceBB = *pieceBBPtr;
 
 		md.pieceBB = pieceBBPtr;
 
-		if ((pieceBB & whiteKnightsBB) || (pieceBB & blackKnightsBB))  moves = mMoveGenerator.computePseudoKnightMoves(originSquare, *md.colourBB);
-		else if ((pieceBB & whiteKingBB) || (pieceBB & blackKingBB))   moves = mMoveGenerator.computePseudoKingMoves(originSquare, *md.colourBB);
-		else if ((pieceBB & whitePawnsBB) || (pieceBB & blackPawnsBB)) moves = mMoveGenerator.computePseudoPawnMoves(originSquare, Side, *md.capturedColourBB, occupiedBB);
+		if ((pieceBB & whiteKnightsBB) || (pieceBB & blackKnightsBB))      moves = mMoveGenerator.computePseudoKnightMoves(originSquare, *md.colourBB);
+		else if ((pieceBB & whiteKingBB) || (pieceBB & blackKingBB))       moves = mMoveGenerator.computePseudoKingMoves(originSquare, *md.colourBB);
+		else if ((pieceBB & whitePawnsBB) || (pieceBB & blackPawnsBB))     moves = mMoveGenerator.computePseudoPawnMoves(originSquare, side, *md.capturedColourBB, occupiedBB);
+		else if ((pieceBB & whiteRooksBB) || (pieceBB & blackRooksBB))	   moves = mMoveGenerator.computePseudoRookMoves(originSquare, *md.capturedColourBB, *md.colourBB);
+		else if ((pieceBB & whiteBishopsBB) || (pieceBB & blackBishopsBB)) moves = mMoveGenerator.computePseudoBishopMoves(originSquare, *md.capturedColourBB, *md.colourBB);
+		else if ((pieceBB & whiteQueensBB) || (pieceBB & blackQueensBB))   moves = mMoveGenerator.computePseudoQueenMoves(originSquare, *md.capturedColourBB, *md.colourBB);
 
 		for (int square = 0; square < 64; square++)
 		{
@@ -192,7 +127,7 @@ void Board::calculatePieceMoves(Colour Side, Byte originSquare, std::vector<Move
 				md.capturedPieceBB = nullptr;
 
 				if (BB::boardSquares[square] & *md.capturedColourBB)
-					md.capturedPieceBB = getPieceBitboard(square, SIDE_BLACK);
+					md.capturedPieceBB = getPieceBitboard(square, !side);
 
 				moveVector.push_back(md);
 			}
@@ -201,15 +136,28 @@ void Board::calculatePieceMoves(Colour Side, Byte originSquare, std::vector<Move
 	}
 }
 
+// black cannot take pieces and pawns sometimes are unable to move
 bool Board::makeMove(MoveData* moveData)
 {
 	// our moves are pseudo legal, meaning we must also check to see if a check is actually preventing these moves. use attack tables?
 	// maybe index an attack table and see if any piece was attacking the tile just moved from. if so, check if there is a check (reupdate attack table)
 	// 
 
-	Bitboard originTarget = BB::boardSquares[moveData->originSquare] ^ BB::boardSquares[moveData->targetSquare];
+	Bitboard origin		  = BB::boardSquares[moveData->originSquare];
+	Bitboard target		  = BB::boardSquares[moveData->targetSquare];
+	Bitboard originTarget = origin ^ target; // 0s on from and to, 1s on everything else
+
 	*moveData->pieceBB	 ^= originTarget;
 	*moveData->colourBB	 ^= originTarget;
+
+	if (moveData->capturedPieceBB) // if a piece was captured
+	{
+		*moveData->capturedPieceBB  ^= target; // only the target's square will have changed
+		*moveData->capturedColourBB ^= target; // only the target's square will have changed
+		occupiedBB					^= origin; // only the origin square is no longer occupied
+		emptyBB						^= origin; // only the origin square is no longer occupied
+	}
+
     occupiedBB           ^= originTarget;
     emptyBB              ^= originTarget;
 

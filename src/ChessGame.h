@@ -18,6 +18,11 @@ private:
 
 	void moveReset();
 
+	void calculateCurrentTurnMoves();
+	std::vector<MoveData>& getMoves();
+
+	void getGUIInput();
+
 public:
 	ChessGame();
 

@@ -85,7 +85,9 @@ public:
 	bool unmakeMove(MoveData* moveData);
 
 	void calculateWhiteMoves();
+	void calculateBlackMoves();
 
 	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves; }
+	std::vector<MoveData>& getBlackMoves() { return mBlackMoves; }
 };
 

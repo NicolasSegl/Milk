@@ -69,6 +69,7 @@ Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bit
 {
 	// if it's white we need to mask ranks to see if it has permissions to move two squares ahead
 	Bitboard moves = mPawnAttackLookupTable[side][pieceCoord] & enemyPieces;
+
 	if (side == SIDE_WHITE)
 	{
 		Bitboard oneStep = (BB::boardSquares[pieceCoord] << 8) & ~occupiedSquares;
@@ -85,4 +86,66 @@ Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bit
 	}
 	
 	return moves;
+}
+
+// value of true = stop adding pieces
+inline bool slidingPieceMoveStep(int square, Bitboard* moves, Bitboard enemyPieces, Bitboard friendlyPieces)
+{
+    if (BB::boardSquares[square] & friendlyPieces)
+        return true;
+
+    *moves |= BB::boardSquares[square];
+
+    if (BB::boardSquares[square] & enemyPieces)
+        return true;
+
+    return false;
+}
+
+Bitboard MoveGenerator::computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces)
+{
+    Bitboard moves = 0;
+
+    // see if it works first, then clean it up. also move the entire side moves into movegenerator and out of board
+    // cannot move to the edges of the board
+    for (int square = pieceCoord + 8; square <= 63; square += 8) // north
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    for (int square = pieceCoord - 8; square >= 0; square -= 8) // south
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    // this remainder math is so that the moves stay in the same rank. compare the numbers to https://www.chessprogramming.org/Square_Mapping_Considerations
+    for (int square = pieceCoord + 1; (square + 1) % 8 != 1; square++) // east
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    for (int square = pieceCoord - 1; (square - 1) % 8 != 6; square--) // west
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+
+    return moves;
+}
+
+Bitboard MoveGenerator::computePseudoBishopMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces)
+{
+    Bitboard moves = 0;
+
+    for (int square = pieceCoord + 7; square <= 63 && (square - 1) % 8 != 6; square += 7)
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    for (int square = pieceCoord + 9; square <= 63 && (square + 1) % 8 != 1; square += 9)
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    for (int square = pieceCoord - 7; square >= 0 && (square + 1) % 8 != 1; square -= 7)
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+    for (int square = pieceCoord - 9; square >= 0 && (square - 1) % 8 != 6; square -= 9)
+        if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
+            break;
+
+    return moves;
+}
+
+Bitboard MoveGenerator::computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces)
+{
+    return computePseudoBishopMoves(pieceCoord, enemyPieces, friendlyPieces) | computePseudoRookMoves(pieceCoord, enemyPieces, friendlyPieces);
 }

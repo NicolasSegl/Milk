@@ -10,6 +10,8 @@ ChessGUI::ChessGUI()
 	mLightColour		  = sf::Color(245, 245, 245);
 	mSelectColour		  = sf::Color(196, 228, 157);
 
+	mLastSelectedSquare = -1;
+
 	static sf::Image spriteSheetImage;
 	if (!spriteSheetImage.loadFromFile("pieceSpriteSheet.png"))
 		std::cout << "Sprite Sheet could not load\n";
@@ -27,7 +29,7 @@ ChessGUI::ChessGUI()
 		if (spriteIndex < 6)
 			mPieceSprites[spriteIndex].setTextureRect(sf::IntRect(spriteIndex * SPRITE_SIZE + spriteIndex, 0, SPRITE_SIZE, SPRITE_SIZE));
 		else
-			mPieceSprites[spriteIndex].setTextureRect(sf::IntRect(spriteIndex * SPRITE_SIZE + spriteIndex - (SPRITE_SIZE * 6 + 6), 
+			mPieceSprites[spriteIndex].setTextureRect(sf::IntRect(spriteIndex * SPRITE_SIZE + spriteIndex - (SPRITE_SIZE * 6 + 6),
 																  SPRITE_SIZE + 1, SPRITE_SIZE, SPRITE_SIZE));
 	}
 }
@@ -48,14 +50,15 @@ void ChessGUI::init(int wWidth, int wHeight)
 	bool darkColour = true;
 	for (int square = 63; square >= 0; square--)
 	{
-		mBoardSquares[square].setSize(sf::Vector2f(mSquareSize, mSquareSize)); 
-		mBoardSquares[square].setPosition(sf::Vector2f((7 - (square % 8)) * wHeight / 8, square / 8 * wHeight / 8));
-		
-		if (darkColour)
-			mBoardSquares[square].setFillColor(mDarkColour);
-		else
-			mBoardSquares[square].setFillColor(mLightColour);
+		mBoardSquares[square].rect.setSize(sf::Vector2f(mSquareSize, mSquareSize));
+		mBoardSquares[square].rect.setPosition(sf::Vector2f((7 - (square % 8)) * wHeight / 8, square / 8 * wHeight / 8));
 
+		if (darkColour)
+			mBoardSquares[square].ogColour = mDarkColour;
+		else
+			mBoardSquares[square].ogColour = mLightColour;
+
+        mBoardSquares[square].rect.setFillColor(mBoardSquares[square].ogColour);
 		darkColour = !darkColour;
 
 		if (square % 8 == 0)
@@ -95,19 +98,25 @@ UserInput ChessGUI::getUserInput()
 	}
 }
 
+void ChessGUI::unselectSelectedSquare()
+{
+    if (mLastSelectedSquare >= 0)
+    {
+        mBoardSquares[63 - mLastSelectedSquare].resetColour();
+        mLastSelectedSquare = -1;
+    }
+}
+
 void ChessGUI::setSelectedSquare(Byte square)
 {
-	static short lastSelectedSquare = -1;
-	static sf::Color lastSelectedColour;
-
-	if (lastSelectedSquare > 0)
+	if (mLastSelectedSquare >= 0)
 	{
-		mBoardSquares[63 - lastSelectedSquare].setFillColor(lastSelectedColour);
-		lastSelectedSquare = square;
-		lastSelectedColour = mBoardSquares[63 - square].getFillColor();
+		mBoardSquares[63 - mLastSelectedSquare].resetColour();
+		mLastSelectedSquare = square;
 	}
 
-	mBoardSquares[63 - square].setFillColor(mSelectColour);
+	mBoardSquares[63 - square].rect.setFillColor(mSelectColour);
+    mLastSelectedSquare = square;
 }
 
 void ChessGUI::drawPiece(sf::Vector2f pos, Board::PieceType spriteType)
@@ -118,22 +127,21 @@ void ChessGUI::drawPiece(sf::Vector2f pos, Board::PieceType spriteType)
 
 void ChessGUI::setMoveColours(MoveData* md)
 {
-	static sf::Color oldColours[2] = { sf::Color(255, 255, 255), sf::Color(255, 255, 255) };
-	static Byte oldMoveSquares[2];
+	static int oldMoveSquares[2] = { -1, -1 };
 
-	// if the first move has been made and oldColours have been initialized, change them back after the move ! 
-	if (oldColours[0] == mDarkColour || oldColours[0] == mLightColour)
+	// if the first move has been made and oldColours have been initialized, change them back after the move !
+	if (oldMoveSquares[0] > -1)
 	{
-		mBoardSquares[oldMoveSquares[0]].setFillColor(oldColours[0]);
-		mBoardSquares[oldMoveSquares[1]].setFillColor(oldColours[1]);
+		mBoardSquares[oldMoveSquares[0]].resetColour();
+		mBoardSquares[oldMoveSquares[1]].resetColour();
 	}
 
 	oldMoveSquares[0] = 63 - md->originSquare;
 	oldMoveSquares[1] = 63 - md->targetSquare;
-	oldColours[0] = mBoardSquares[md->originSquare].getFillColor();
-	oldColours[1] = mBoardSquares[md->targetSquare].getFillColor();
-	mBoardSquares[63 - md->targetSquare].setFillColor(mSelectColour);
-	mBoardSquares[63 - md->originSquare].setFillColor(mSelectColour);
+
+	mBoardSquares[63 - md->targetSquare].rect.setFillColor(mSelectColour);
+	mBoardSquares[63 - md->originSquare].rect.setFillColor(mSelectColour);
+	mLastSelectedSquare = -1;
 }
 
 void ChessGUI::updateBoard(Board* board)
@@ -141,14 +149,14 @@ void ChessGUI::updateBoard(Board* board)
 	mWindow.clear();
 
 	for (int square = 0; square < 64; square++)
-		mWindow.draw(mBoardSquares[square]);
+		mWindow.draw(mBoardSquares[square].rect);
 
 	// draw all of the pieces on the board
 	for (int bit = 63; bit >= 0; bit--)
 	{
 		// currently only works for SPRITE_SIZE = 80
-		sf::Vector2f translatedPos(bit % 8 * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2, 
-								   (7 - bit / 8) * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2); // they all start top left 
+		sf::Vector2f translatedPos(bit % 8 * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2,
+								   (7 - bit / 8) * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2); // they all start top left
 		// try for bit = 0
 
 		if		(board->whitePawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_PAWN);
