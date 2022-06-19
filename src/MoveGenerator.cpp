@@ -49,7 +49,7 @@ void MoveGenerator::initPawnLT(Colour side, Byte pawnLoc)
     if (side == SIDE_WHITE)
         mPawnAttackLookupTable[SIDE_WHITE][pawnLoc] = pawnAFileCleared << 7 | pawnHFileCleared << 9;
     else if (side == SIDE_BLACK)
-        mPawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileCleared >> 7 | pawnHFileCleared >> 9;
+        mPawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileCleared >> 9 | pawnHFileCleared >> 7;
 }
 
 Bitboard MoveGenerator::computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPieces)
@@ -65,26 +65,26 @@ Bitboard MoveGenerator::computePseudoKnightMoves(Byte pieceCoord, Bitboard frien
     return mKnightLookupTable[pieceCoord] & ~friendlyPieces;
 }
 
-Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard occupiedSquares)
+Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard emptyBB, Bitboard enPassantBB)
 {
 	// if it's white we need to mask ranks to see if it has permissions to move two squares ahead
-	Bitboard moves = mPawnAttackLookupTable[side][pieceCoord] & enemyPieces;
+	Bitboard moves = (mPawnAttackLookupTable[side][pieceCoord] & enemyPieces) | (mPawnAttackLookupTable[side][pieceCoord] & enPassantBB);
 
 	if (side == SIDE_WHITE)
 	{
-		Bitboard oneStep = (BB::boardSquares[pieceCoord] << 8) & ~occupiedSquares;
-		// if it passed the above filter, it is now on rank 3 (if the first move was on rank 2: the home rank for white pieces)
-		Bitboard twoStep = ((oneStep << 8) & BB::rankClear[BB::RANK_THIRD]) & ~occupiedSquares;
+		Bitboard oneStep = (BB::boardSquares[pieceCoord] << 8) & emptyBB;
+		// if the twostep is on the fourth rank, it would mean the pawn was on its home row
+		Bitboard twoStep = ((oneStep << 8) & ~BB::rankClear[BB::RANK_FOURTH]) & emptyBB;
 		moves |= oneStep | twoStep;
 	}
 	else if (side == SIDE_BLACK)
 	{
-		Bitboard oneStep = (BB::boardSquares[pieceCoord] >> 8) & ~occupiedSquares;
-		// if it passed the above filter, it is now on rank 6 (if the first move was on rank 7: the home rank for black pieces)
-		Bitboard twoStep = ((oneStep >> 8) & BB::rankClear[BB::RANK_SIXTH]) & ~occupiedSquares;
+		Bitboard oneStep = (BB::boardSquares[pieceCoord] >> 8) & emptyBB;
+		// if the twostep is on the fifth rank, it would mean the pawn was on its home row
+		Bitboard twoStep = ((oneStep >> 8) & ~BB::rankClear[BB::RANK_FIFTH]) & emptyBB;
 		moves |= oneStep | twoStep;
 	}
-	
+
 	return moves;
 }
 
@@ -148,4 +148,71 @@ Bitboard MoveGenerator::computePseudoBishopMoves(Byte pieceCoord, Bitboard enemy
 Bitboard MoveGenerator::computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces)
 {
     return computePseudoBishopMoves(pieceCoord, enemyPieces, friendlyPieces) | computePseudoRookMoves(pieceCoord, enemyPieces, friendlyPieces);
+}
+
+// get this working first then refactor it
+MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitboard occupied, Privilege castleType)
+{
+    MoveData md;
+    md.side = side;
+    md.setMoveType(MoveData::EncodingBits::NONE);
+    int lower, higher;
+
+    if (castleType == Privilege::WHITE_SHORT_CASTLE || castleType == Privilege::BLACK_SHORT_CASTLE)
+    {
+        if (side == SIDE_WHITE) { lower = 5;  higher = 7;  }
+        if (side == SIDE_BLACK) { lower = 60; higher = 62; }
+
+        if (((privileges & (int)Privilege::WHITE_SHORT_CASTLE) && side == SIDE_WHITE) ||
+             (privileges & (int)Privilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
+        {
+            // check if the castle would be legal
+            for (int tile = lower; tile < higher; tile++) // king is on tile 4,
+                if (BB::boardSquares[tile] & occupied)
+                {
+                    md.setMoveType(MoveData::EncodingBits::INVALID);
+                    break;
+                }
+                    //md.setMoveType(MoveData::EncodingBits::INVALID);
+
+            if (md.moveType != MoveData::EncodingBits::INVALID)
+            {
+                md.setMoveType(MoveData::EncodingBits::SHORT_CASTLE);
+                md.originSquare = lower  - 1;
+                md.targetSquare = higher - 1;
+            }
+
+            return md;
+        }
+    }
+    else if (castleType == Privilege::WHITE_LONG_CASTLE || castleType == Privilege::BLACK_LONG_CASTLE)
+    {
+        if (side == SIDE_WHITE) { lower = 0;  higher = 3;  }
+        if (side == SIDE_BLACK) { lower = 56; higher = 59; }
+
+        if (((privileges & (int)Privilege::WHITE_LONG_CASTLE) && side == SIDE_WHITE) ||
+             (privileges & (int)Privilege::BLACK_LONG_CASTLE) && side == SIDE_BLACK)
+        {
+            // check if the castle would be legal
+            for (int tile = higher; tile > lower; tile--) // king is on tile 4,
+                if (BB::boardSquares[tile] & occupied)
+                {
+                    md.setMoveType(MoveData::EncodingBits::INVALID);
+                    break;
+                }
+                    //md.setMoveType(MoveData::EncodingBits::INVALID);
+
+            if (md.moveType != MoveData::EncodingBits::INVALID)
+            {
+                md.setMoveType(MoveData::EncodingBits::LONG_CASTLE);
+                md.originSquare = higher + 1;
+                md.targetSquare = lower + 2;
+            }
+
+            return md;
+        }
+    }
+
+    md.setMoveType(MoveData::EncodingBits::INVALID);
+    return md;
 }

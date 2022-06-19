@@ -11,6 +11,8 @@ struct UserInput
 	{
 		SquareSelect,
 		GameClose,
+		UndoMove,
+		Nothing,
 	};
 
 	InputType inputType;
@@ -29,7 +31,6 @@ private:
     };
 
 	sf::RenderWindow mWindow;
-	//sf::RectangleShape mBoardSquares[64];
     guiSquareData mBoardSquares[64];
 
 	sf::Sprite mPieceSprites[12];
@@ -40,16 +41,19 @@ private:
 	int mLastSelectedSquare;
 
 	void drawPiece(sf::Vector2f pos, Board::PieceType spriteType);
+	void createSquareSprites();
 
 public:
 	ChessGUI();
 
 	void init(int wWidth, int wHeight);
 
-	UserInput getUserInput(); // have this return a special struct or an enum
+	UserInput getUserInput(); 
 	void updateBoard(Board* board);
 	void setMoveColours(MoveData* md);
 	void setSelectedSquare(Byte square);
 	void unselectSelectedSquare();
+	
+	void resetAllColours();
 };
 

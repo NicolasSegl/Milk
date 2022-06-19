@@ -22,14 +22,6 @@ std::vector<MoveData>& ChessGame::getMoves()
         return mBoard.getBlackMoves();
 }
 
-void ChessGame::calculateCurrentTurnMoves()
-{
-	if (mSideToMove == SIDE_WHITE)
-		mBoard.calculateWhiteMoves();
-	else
-		mBoard.calculateBlackMoves();
-}
-
 void ChessGame::getGUIInput()
 {
 	UserInput userInput = mGUI.getUserInput();
@@ -63,6 +55,22 @@ void ChessGame::getGUIInput()
 			exit(0);
 			break;
 		}
+		case UserInput::InputType::UndoMove:
+		{
+			if (moveHistory.size() > 0)
+				if (moveHistory.back())
+				{
+					mSideToMove = !mSideToMove;
+					mBoard.unmakeMove(moveHistory.back());
+					if (moveHistory.size() > 1)
+						mGUI.setMoveColours(moveHistory[moveHistory.size() - 2]);
+					else // if the first move is taken back, set all tiles to nothing!
+						mGUI.resetAllColours();
+
+					moveHistory.pop_back();
+				}
+			break;
+		}
 	}
 }
 
@@ -77,30 +85,33 @@ void ChessGame::runGUI()
 
 		if (mTargetSquare >= 0 && mOriginSquare >= 0)
 		{
-			calculateCurrentTurnMoves();
+			mBoard.calculateSideMoves(mSideToMove);
 			std::vector<MoveData>& moves = getMoves();
 
 			bool moveMade = false;
 			for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++)
 			{
 				if (moves[moveIndex].originSquare == mOriginSquare && moves[moveIndex].targetSquare == mTargetSquare)
-					if (mBoard.makeMove(&moves[moveIndex]))
+                    if (mBoard.makeMove(&moves[moveIndex]))
                     {
                         moveMade = true;
-						mGUI.setMoveColours(&moves[moveIndex]);
-						mSideToMove = !mSideToMove;
-						break;
+                        mGUI.setMoveColours(&moves[moveIndex]);
+                        mSideToMove = !mSideToMove;
+
+						if (moves[moveIndex].pieceBB == &mBoard.whitePawnsBB || moves[moveIndex].pieceBB == &mBoard.blackPawnsBB)
+							if (moves[moveIndex].targetSquare >= 56 || moves[moveIndex].targetSquare <= 7)
+								mBoard.promotePiece(&moves[moveIndex], MoveData::EncodingBits::QUEEN_PROMO);
+
+						moveHistory.push_back(new MoveData);
+						*moveHistory.back() = moves[moveIndex];
+
+                        break;
                     }
 			}
 
 			moveReset();
-			if (!moveMade)// && mTargetSquare != )
+			if (!moveMade)
                 mGUI.unselectSelectedSquare();
 		}
 	}
 }
-
-// also just a rook/bishop look up table for all attacks on any square (without considering blockers: i.e., they go to the ends of the board)
-// blockers dont matter if they're on the end ? at the end of file or end of rank
-// we have to mask these depending on the square
-// learn about perfect hashing.

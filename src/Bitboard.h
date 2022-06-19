@@ -51,8 +51,8 @@ namespace BB
 		const Bitboard cBRooksStartBB   = 9295429630892703744;
 		const Bitboard cBKnightsStartBB = 4755801206503243776;
 		const Bitboard cBBishopsStartBB = 2594073385365405696;
-		const Bitboard cBQueensStartBB  = 1152921504606846976;
-		const Bitboard cBKingStartBB    = 576460752303423488;
+		const Bitboard cBQueensStartBB  = 576460752303423488;
+		const Bitboard cBKingStartBB    = 1152921504606846976;
 	}
 
     extern Bitboard boardSquares[64];

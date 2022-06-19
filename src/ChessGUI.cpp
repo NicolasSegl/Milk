@@ -34,11 +34,33 @@ ChessGUI::ChessGUI()
 	}
 }
 
+void ChessGUI::createSquareSprites()
+{
+	bool darkColour = true;
+	for (int square = 63; square >= 0; square--)
+	{
+		mBoardSquares[square].rect.setSize(sf::Vector2f(mSquareSize, mSquareSize));
+		mBoardSquares[square].rect.setPosition(sf::Vector2f((7 - (square % 8)) * mWindowHeight / 8, square / 8 * mWindowHeight / 8));
+		mBoardSquares[square].rect.setOutlineThickness(1);
+
+		if (darkColour)
+			mBoardSquares[square].ogColour = mDarkColour;
+		else
+			mBoardSquares[square].ogColour = mLightColour;
+
+		mBoardSquares[square].rect.setFillColor(mBoardSquares[square].ogColour);
+		darkColour = !darkColour;
+
+		if (square % 8 == 0)
+			darkColour = !darkColour;
+	}
+}
+
 void ChessGUI::init(int wWidth, int wHeight)
 {
 	mWindowWidth  = wWidth;
 	mWindowHeight = wHeight;
-	mWindow.create(sf::VideoMode(mWindowWidth, mWindowHeight), "Chess Engine");
+	mWindow.create(sf::VideoMode(mWindowWidth, mWindowHeight), "Chess Engine", sf::Style::Titlebar | sf::Style::Close);
 
 	mSquareSize = mWindowHeight / 8;
 
@@ -47,23 +69,7 @@ void ChessGUI::init(int wWidth, int wHeight)
 		for (int i = 0; i < 12; i++)
 			mPieceSprites[i].setScale(sf::Vector2f(0.9, 0.9));
 
-	bool darkColour = true;
-	for (int square = 63; square >= 0; square--)
-	{
-		mBoardSquares[square].rect.setSize(sf::Vector2f(mSquareSize, mSquareSize));
-		mBoardSquares[square].rect.setPosition(sf::Vector2f((7 - (square % 8)) * wHeight / 8, square / 8 * wHeight / 8));
-
-		if (darkColour)
-			mBoardSquares[square].ogColour = mDarkColour;
-		else
-			mBoardSquares[square].ogColour = mLightColour;
-
-        mBoardSquares[square].rect.setFillColor(mBoardSquares[square].ogColour);
-		darkColour = !darkColour;
-
-		if (square % 8 == 0)
-			darkColour = !darkColour;
-	}
+	createSquareSprites();
 }
 
 UserInput ChessGUI::getUserInput()
@@ -90,9 +96,19 @@ UserInput ChessGUI::getUserInput()
 				{
 					input.inputType = UserInput::InputType::SquareSelect;
 					input.squareLoc = my / mSquareSize * 8 + mx / mSquareSize;
+					if (input.squareLoc < 0 || input.squareLoc > 63)
+					{
+						input.inputType = UserInput::InputType::Nothing;
+						return input;
+					}
 
 					return input;
 				}
+			}
+			else if (event.type == sf::Event::KeyPressed)
+			{
+				input.inputType = UserInput::InputType::UndoMove;
+				return input;
 			}
 		}
 	}
@@ -142,6 +158,12 @@ void ChessGUI::setMoveColours(MoveData* md)
 	mBoardSquares[63 - md->targetSquare].rect.setFillColor(mSelectColour);
 	mBoardSquares[63 - md->originSquare].rect.setFillColor(mSelectColour);
 	mLastSelectedSquare = -1;
+}
+
+void ChessGUI::resetAllColours()
+{
+	for (int square = 0; square < 64; square++)
+		mBoardSquares[square].resetColour();
 }
 
 void ChessGUI::updateBoard(Board* board)
