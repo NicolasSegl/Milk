@@ -161,7 +161,7 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
     if (castleType == Privilege::WHITE_SHORT_CASTLE || castleType == Privilege::BLACK_SHORT_CASTLE)
     {
         if (side == SIDE_WHITE) { lower = 5;  higher = 7;  }
-        if (side == SIDE_BLACK) { lower = 60; higher = 62; }
+        if (side == SIDE_BLACK) { lower = 61; higher = 63; }
 
         if (((privileges & (int)Privilege::WHITE_SHORT_CASTLE) && side == SIDE_WHITE) ||
              (privileges & (int)Privilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
@@ -170,6 +170,8 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
             for (int tile = lower; tile < higher; tile++) // king is on tile 4,
                 if (BB::boardSquares[tile] & occupied)
                 {
+                  //  std::cout << "occupied: \n";
+                    //BB::printBitboard(occupied);
                     md.setMoveType(MoveData::EncodingBits::INVALID);
                     break;
                 }

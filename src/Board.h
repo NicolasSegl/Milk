@@ -91,6 +91,8 @@ public:
 	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
 	void calculateSideMoves(Colour side);
 
-	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves; }
-	std::vector<MoveData>& getBlackMoves() { return mBlackMoves; }
+	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;     }
+	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;     }
+    Byte getMovePrivileges()               { return mMovePrivileges; }
+    std::vector<MoveData>& getMoves(Colour side);
 };

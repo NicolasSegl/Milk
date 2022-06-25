@@ -6,6 +6,8 @@ ChessGame::ChessGame()
 {
 	mBoard.init();
 	moveReset();
+    mMilk.activate();
+    mSideToMove = SIDE_WHITE;
 }
 
 void ChessGame::moveReset()
@@ -74,14 +76,38 @@ void ChessGame::getGUIInput()
 	}
 }
 
+// no castle moves are being generated ... 
+void ChessGame::makeMove(MoveData* moveData)
+{
+    if (mBoard.makeMove(moveData))
+    {
+        mGUI.setMoveColours(moveData);
+        mSideToMove = !mSideToMove;
+
+        if (moveData->pieceBB == &mBoard.whitePawnsBB || moveData->pieceBB == &mBoard.blackPawnsBB)
+            if (moveData->targetSquare >= 56 || moveData->targetSquare <= 7)
+                mBoard.promotePiece(moveData, MoveData::EncodingBits::QUEEN_PROMO);
+
+        moveHistory.push_back(new MoveData);
+        *moveHistory.back() = *moveData;
+    }
+}
+
 void ChessGame::runGUI()
 {
 	mGUI.init(1000, 800);
-
+    
 	while (true)
 	{
 		mGUI.updateBoard(&mBoard);
-		getGUIInput();
+        
+        if (mMilk.isActive() && mMilk.getColour() == mSideToMove)
+        {
+            MoveData MILKMove = mMilk.computeMove(&mBoard); // this also makes the move. change that ?
+            makeMove(&MILKMove);
+        }
+        else
+            getGUIInput();
 
 		if (mTargetSquare >= 0 && mOriginSquare >= 0)
 		{

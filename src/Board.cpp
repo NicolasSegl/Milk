@@ -79,16 +79,23 @@ void Board::calculateSideMoves(Colour side)
 	for (int square = 0; square < 64; square++)
 		calculatePieceMoves(side, square, sideMovesRef);
 
+    MoveData shortCastleMD, longCastleMD;
+    
 	if (side == SIDE_WHITE) // white castle moves
 	{
-		sideMovesRef.push_back(mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_SHORT_CASTLE));
-		sideMovesRef.push_back(mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_LONG_CASTLE));
+        shortCastleMD = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_SHORT_CASTLE);
+        longCastleMD  = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_LONG_CASTLE);
 	}
 	else // black castle moves
 	{
-		sideMovesRef.push_back(mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_SHORT_CASTLE));
-		sideMovesRef.push_back(mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_LONG_CASTLE));
+		shortCastleMD = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_SHORT_CASTLE);
+		longCastleMD  = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_LONG_CASTLE);
 	}
+    
+    if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID)
+        sideMovesRef.push_back(shortCastleMD);
+    if (longCastleMD.moveType != MoveData::EncodingBits::INVALID)
+        sideMovesRef.push_back(longCastleMD);
 }
 
 void Board::calculatePieceMoves(Colour side, Byte originSquare, std::vector<MoveData>& moveVector)
@@ -247,11 +254,6 @@ bool Board::makeCastleMove(MoveData* md)
 
     makeMove(&kingMove);
     makeMove(&rookMove);
-    // change priveleges
-    if (md->side == SIDE_WHITE)
-        md->privilegesRevoked ^= (Byte)Privilege::WHITE_LONG_CASTLE | (Byte)Privilege::WHITE_SHORT_CASTLE;
-    else
-		md->privilegesRevoked ^= (Byte)Privilege::BLACK_LONG_CASTLE | (Byte)Privilege::BLACK_SHORT_CASTLE;
 
     return true;
 }
@@ -326,11 +328,10 @@ bool Board::unmakeMove(MoveData* moveData)
 		mMovePrivileges ^= moveData->privilegesRevoked;
 		return true;
 	}
-
-	// can castle after unmaking move :////
+    
 	mMovePrivileges ^= moveData->privilegesRevoked;
-	enPassantBB = moveData->enPassantBB;
-
+	enPassantBB      = moveData->enPassantBB;
+    
 	undoPromotion(moveData);
 	
 	updateBitboardWithMove(moveData);
@@ -399,4 +400,10 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) blackBishopsBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) blackKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
+}
+
+std::vector<MoveData>& Board::getMoves(Colour side)
+{
+    if (side == SIDE_WHITE) return mWhiteMoves;
+    else                    return mBlackMoves;
 }
