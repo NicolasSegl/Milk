@@ -30,6 +30,8 @@ void Board::setBitboards()
     emptyBB = ~occupiedBB;
 
     mMovePrivileges = ~(0); // full priveleges for both sides at the start of the game
+
+	//mMovePrivileges = 0;
 }
 
 void Board::init()
@@ -79,20 +81,29 @@ void Board::calculateSideMoves(Colour side)
 	for (int square = 0; square < 64; square++)
 		calculatePieceMoves(side, square, sideMovesRef);
 
+	// check if castle moves are possible before computing them (otherwise resulting in invalid moves)
     MoveData shortCastleMD, longCastleMD;
     
+	// castle moves are asshole raping the whole thing somehow
+
 	if (side == SIDE_WHITE) // white castle moves
 	{
+		if (whiteKingBB == 0)
+			return;
+
         shortCastleMD = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_SHORT_CASTLE);
         longCastleMD  = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::WHITE_LONG_CASTLE);
 	}
 	else // black castle moves
 	{
+		if (blackKingBB == 0)
+			return;
+
 		shortCastleMD = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_SHORT_CASTLE);
 		longCastleMD  = mMoveGenerator.computeCastleMoveData(side, mMovePrivileges, occupiedBB, Privilege::BLACK_LONG_CASTLE);
 	}
     
-    if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID)
+    if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID) // the or is for debug
         sideMovesRef.push_back(shortCastleMD);
     if (longCastleMD.moveType != MoveData::EncodingBits::INVALID)
         sideMovesRef.push_back(longCastleMD);
@@ -146,13 +157,13 @@ Bitboard Board::calculatePsuedoMove(MoveData* md, Bitboard& pieceBB)
 	else if ((pieceBB & whiteRooksBB) || (pieceBB & blackRooksBB)) // these moves may change castling privileges
 	{
 		if (md->side == SIDE_WHITE && md->originSquare == 0 && (mMovePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::WHITE_LONG_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
 		else if (md->side == SIDE_WHITE && md->originSquare == 7 && (mMovePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::WHITE_SHORT_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
 		else if (md->side == SIDE_BLACK && md->originSquare == 56 && (mMovePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::BLACK_LONG_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
 		else if (md->side == SIDE_BLACK && md->originSquare == 63 && (mMovePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::BLACK_SHORT_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
 
 		return mMoveGenerator.computePseudoRookMoves(md->originSquare, *md->capturedColourBB, *md->colourBB);
 	}
@@ -160,13 +171,13 @@ Bitboard Board::calculatePsuedoMove(MoveData* md, Bitboard& pieceBB)
 	else if ((pieceBB & whiteKingBB) || (pieceBB & blackKingBB)) // these moves may change castling privileges
 	{
 		if (md->side == SIDE_WHITE && md->originSquare == 4 && (mMovePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::WHITE_LONG_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
 		if (md->side == SIDE_WHITE && md->originSquare == 4 && (mMovePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::WHITE_SHORT_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
 		if (md->side == SIDE_BLACK && md->originSquare == 60 && (mMovePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::BLACK_LONG_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
 		if (md->side == SIDE_BLACK && md->originSquare == 60 && (mMovePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))
-			md->privilegesRevoked ^= (Byte)Privilege::BLACK_SHORT_CASTLE;
+			md->privilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
 
 		return mMoveGenerator.computePseudoKingMoves(md->originSquare, *md->colourBB);
 	}
@@ -203,6 +214,18 @@ void Board::findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>
 			}
 			else if (enPassantBB)
 				md.enPassantBB = enPassantBB;
+
+			// remove castling privileges if a rook was captured
+			if (md.capturedPieceBB == &blackRooksBB)
+			{
+				if (md.targetSquare == 63)		md.privilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
+				else if (md.targetSquare == 56) md.privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
+			}
+			else if (md.capturedPieceBB == &whiteRooksBB)
+			{
+				if (md.targetSquare == 7)		md.privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
+				else if (md.targetSquare == 0)  md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
+			}
 
 			moveVector.push_back(md);
 		}

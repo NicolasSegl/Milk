@@ -115,10 +115,12 @@ Bitboard MoveGenerator::computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPi
         if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
             break;
     // this remainder math is so that the moves stay in the same rank. compare the numbers to https://www.chessprogramming.org/Square_Mapping_Considerations
-    for (int square = pieceCoord + 1; (square + 1) % 8 != 1; square++) // east
+    for (int square = pieceCoord + 1; (square + 1) % 8 != 1 && square <= 63; square++) // east
         if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
             break;
-    for (int square = pieceCoord - 1; (square - 1) % 8 != 6; square--) // west
+
+    for (int square = pieceCoord - 1; (square - 1) % 8 != 6 && square > 0; square--) // west right cause this works UNLESS its on the bottom rank right ?
+     //   if (square >= 0)
         if (slidingPieceMoveStep(square, &moves, enemyPieces, friendlyPieces))
             break;
 
@@ -180,6 +182,9 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
             if (md.moveType != MoveData::EncodingBits::INVALID)
             {
                 md.setMoveType(MoveData::EncodingBits::SHORT_CASTLE);
+                if (md.side == SIDE_WHITE) md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE | (Byte)Privilege::WHITE_SHORT_CASTLE;
+                else                       md.privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE | (Byte)Privilege::BLACK_SHORT_CASTLE;
+
                 md.originSquare = lower  - 1;
                 md.targetSquare = higher - 1;
             }
@@ -207,6 +212,9 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
             if (md.moveType != MoveData::EncodingBits::INVALID)
             {
                 md.setMoveType(MoveData::EncodingBits::LONG_CASTLE);
+                if (md.side == SIDE_WHITE) md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE | (Byte)Privilege::WHITE_SHORT_CASTLE;
+                else                       md.privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE | (Byte)Privilege::BLACK_SHORT_CASTLE;
+
                 md.originSquare = higher + 1;
                 md.targetSquare = lower + 2;
             }

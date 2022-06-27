@@ -13,9 +13,11 @@ private:
     Colour mSide;
     MoveData mMoveToMake;
     bool mActive = false;
+
+    void sortMoves(std::vector<MoveData>& moves);
     
-    float minimax(Board* board, int depth, Colour side, int alpha, int beta);
-    float evaluatePosition(Board* board);
+    int minimax(Board* board, int depth, Colour side, int alpha, int beta);
+    int evaluatePosition(Board* board);
 
 public:
     MILK();

@@ -1,71 +1,115 @@
 #include "MILK.h"
+#include "SquarePieceTables.h"
 
 #include <iostream>
 #include <limits>
+#include <algorithm>
+#include <SFML/Graphics.hpp>
 
 MILK::MILK()
 {
     mKingValue   = 20000;
     mQueenValue  = 900;
     mRookValue   = 500;
-    mBishopValue = 300;
-    mKnightValue = 300;
-    mPawnValue   = 100;
+    mBishopValue = 330;
+    mKnightValue = 320;
+    mPawnValue = 100;
     
     // by default
     mSide = SIDE_WHITE;
-    mDepth = 3;
+    mDepth = 5;
 }
 
 MoveData MILK::computeMove(Board* board)
 {
+    evaluatePosition(board);
+    mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
+    sf::Clock clock;
     minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+    std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
     return mMoveToMake;
 }
 
-float MILK::evaluatePosition(Board* board)
+// do something to find the string of moves that gets eval = 100 at the start?
+int MILK::evaluatePosition(Board* board)
 {
-    float whiteEval = 0;
-    float blackEval = 0;
+    int whiteEval = 0;
+    int blackEval = 0;
     
     for (int square = 0; square < 64; square++)
     {
-        if      (BB::boardSquares[square] & board->whitePawnsBB)   whiteEval += mPawnValue;
-        else if (BB::boardSquares[square] & board->whiteKnightsBB) whiteEval += mKnightValue;
-        else if (BB::boardSquares[square] & board->whiteBishopsBB) whiteEval += mBishopValue;
-        else if (BB::boardSquares[square] & board->whiteRooksBB)   whiteEval += mRookValue;
-        else if (BB::boardSquares[square] & board->whiteQueensBB)  whiteEval += mQueenValue;
-        else if (BB::boardSquares[square] & board->whiteKingBB)    whiteEval += mKingValue;
+        if (BB::boardSquares[square] & board->emptyBB) // optimization
+            continue;
+
+        // consider piece value and piece square table
+        if (BB::boardSquares[square] & board->whitePawnsBB)
+        {
+            whiteEval += mPawnValue;
+            whiteEval += pst::pawnTable[63 - square];
+        }
+        else if (BB::boardSquares[square] & board->whiteKnightsBB)
+        {
+            whiteEval += mKnightValue;
+            whiteEval += pst::knightTable[63 - square];
+        }
+        else if (BB::boardSquares[square] & board->whiteBishopsBB)
+        {
+            whiteEval += mBishopValue;
+            whiteEval += pst::bishopTable[63 - square];
+        }
+        else if (BB::boardSquares[square] & board->whiteRooksBB)
+        {
+            whiteEval += mRookValue;
+            whiteEval += pst::rookTable[63 - square];
+        }
+        else if (BB::boardSquares[square] & board->whiteQueensBB)
+        {
+            whiteEval += mQueenValue;
+            whiteEval += pst::queenTable[63 - square];
+        }
+        else if (BB::boardSquares[square] & board->whiteKingBB)
+        {
+            whiteEval += mKingValue;
+            whiteEval += pst::kingTable[63 - square];
+        }
         
-        else if (BB::boardSquares[square] & board->blackPawnsBB)   blackEval += mPawnValue;
-        else if (BB::boardSquares[square] & board->blackKnightsBB) blackEval += mKnightValue;
-        else if (BB::boardSquares[square] & board->blackBishopsBB) blackEval += mBishopValue;
-        else if (BB::boardSquares[square] & board->blackRooksBB)   blackEval += mRookValue;
-        else if (BB::boardSquares[square] & board->blackQueensBB)  blackEval += mQueenValue;
-        else if (BB::boardSquares[square] & board->blackKingBB)    blackEval += mKingValue;
+        else if (BB::boardSquares[square] & board->blackPawnsBB)
+        {
+            blackEval += mPawnValue;
+            blackEval += pst::pawnTable[square];
+        }
+        else if (BB::boardSquares[square] & board->blackKnightsBB)
+        {
+            blackEval += mKnightValue;
+            blackEval += pst::knightTable[square];
+        }
+        else if (BB::boardSquares[square] & board->blackBishopsBB)
+        {
+            blackEval += mBishopValue;
+            blackEval += pst::bishopTable[square];
+        }
+        else if (BB::boardSquares[square] & board->blackRooksBB)
+        {
+            blackEval += mRookValue;
+            blackEval += pst::rookTable[square];
+        }
+        else if (BB::boardSquares[square] & board->blackQueensBB)
+        {
+            blackEval += mQueenValue;
+            blackEval += pst::queenTable[square];
+        }
+        else if (BB::boardSquares[square] & board->blackKingBB)
+        {
+            blackEval += mKingValue;
+            blackEval += pst::kingTable[square];
+        }
     }
     
     return whiteEval - blackEval;
 }
 
-float maxf(float a, float b)
-{
-    if (a > b)
-        return a;
-    return b;
-}
-
-float minf(float a, float b)
-{
-    if (a < b)
-        return a;
-    return b;
-}
-
-// alpha beta pruning DOES NOT WORK! MILK is making different moves so we need to fix this
-// the ai is making the first possible move in its list each time ?
-
-float MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta)
+// should eval ever be plus or negative infinity? how would this even happen? 
+int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta)
 {
     if (depth == 0) // OR the game is over at this position
         return evaluatePosition(board);
@@ -75,47 +119,49 @@ float MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta)
     
     if (side == mSide) // if maximizing
     {
-        float maxEval = -std::numeric_limits<int>::max(); // arbitrarily large number that any other position will be better
-                        
-        // it is making just one move for black each time it computes a move. when it does this the move privileges get fucked?
-        
+        int maxEval = -std::numeric_limits<int>::max(); // arbitrarily large number that any other position will be better
+                                
+        int moveCount = 0;
+
         for (MoveData& move : moves)
         {
+            moveCount++;
             // if makemove is legal (i.e. wouldn't result in a check)
             board->makeMove(&move);
-            float eval = minimax(board, depth - 1, !side, alpha, beta);
-            board->unmakeMove(&move); // privileges are not being returned upon unmaking the move !
-            maxEval = maxf(maxEval, eval);
-            
-            if (maxEval == eval && depth == mDepth)
+            int eval = minimax(board, depth - 1, !side, alpha, beta);
+            board->unmakeMove(&move);
+
+            // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
+            if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID && depth == mDepth) && depth == mDepth)
+            {
                 mMoveToMake = move;
+            }
+
+            maxEval = std::max(maxEval, eval);
             
-            alpha = maxf(alpha, eval);
-            if (alpha >= beta)
+            alpha = std::max(alpha, eval);
+            if (beta <= alpha)
                 break;
-            
         }
         
         return maxEval;
     }
     else // if minimizing
     {
-        float minEval = std::numeric_limits<int>::max();
+        int minEval = std::numeric_limits<int>::max();
         
         for (MoveData& move : moves)
         {
             board->makeMove(&move);
-            float eval = minimax(board, depth - 1, !side, alpha, beta);
+            int eval = minimax(board, depth - 1, !side, alpha, beta);
             board->unmakeMove(&move);            
-            minEval = minf(minEval, eval);
-            
-            beta = minf(beta, eval);
-            if (alpha >= beta)
-                break;
+            minEval = std::min(minEval, eval);
+
+            beta = std::min(beta, eval);
+            if (beta <= alpha)
+               break;
         }
         
         return minEval;
     }
 }
-
-// I CANT FIGURE THIS SHIT OUT ANYWAAY LOLOLOL WHY IT NO WORK SOOO FUNNNY FUCK U C++
