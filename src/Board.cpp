@@ -74,12 +74,21 @@ Bitboard* Board::getPieceBitboard(Byte square, Colour side)
 void Board::calculateSideMoves(Colour side)
 {
 	std::vector<MoveData>& sideMovesRef = side == SIDE_WHITE ? mWhiteMoves : mBlackMoves;
+	Bitboard& colourAttackBB		    = side == SIDE_WHITE ? whiteAttackBB : blackAttackBB;
+	colourAttackBB = 0;
 
 	sideMovesRef.clear();
 	sideMovesRef.reserve(100);
 	
+	// consider all the tiles being attacked by pawns
 	for (int square = 0; square < 64; square++)
-		calculatePieceMoves(side, square, sideMovesRef);
+	{
+		// get the attacks need to use file/rank clear
+		//if (BB::boardSquares[square] & whitePawnsBB)
+			//colourAttackBB |= mMoveGenerator.pawnAttackLookupTable[SIDE_WHITE][square]
+
+		calculatePieceMoves(side, square, sideMovesRef, colourAttackBB);
+	}
 
 	// check if castle moves are possible before computing them (otherwise resulting in invalid moves)
     MoveData shortCastleMD, longCastleMD;
@@ -109,7 +118,7 @@ void Board::calculateSideMoves(Colour side)
         sideMovesRef.push_back(longCastleMD);
 }
 
-void Board::calculatePieceMoves(Colour side, Byte originSquare, std::vector<MoveData>& moveVector)
+void Board::calculatePieceMoves(Colour side, Byte originSquare, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB)
 {
 	MoveData md;
 	if (side == SIDE_WHITE)
@@ -136,7 +145,7 @@ void Board::calculatePieceMoves(Colour side, Byte originSquare, std::vector<Move
 		moves = calculatePsuedoMove(&md, *pieceBBPtr);
 
 		if (moves > 0)
-			findMoveCaptures(moves, md, moveVector);
+			findMoveCaptures(moves, md, moveVector, colourAttackBB);
 	}
 }
 
@@ -183,7 +192,8 @@ Bitboard Board::calculatePsuedoMove(MoveData* md, Bitboard& pieceBB)
 	}
 }
 
-void Board::findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>& moveVector)
+// note that this function (as of now) actually adds the moves to the moveVector as well
+void Board::findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB)
 {
 	for (int square = 0; square < 64; square++)
 	{
@@ -226,6 +236,10 @@ void Board::findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>
 				if (md.targetSquare == 7)		md.privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
 				else if (md.targetSquare == 0)  md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
 			}
+
+			// pawns can only attack diagonals
+			if (md.pieceBB != &whitePawnsBB && md.pieceBB != &blackPawnsBB)
+				colourAttackBB |= BB::boardSquares[md.targetSquare];
 
 			moveVector.push_back(md);
 		}
@@ -321,8 +335,10 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 
 bool Board::makeMove(MoveData* moveData)
 {
-	// maybe up here check if it would result in a check? right now all moves are just pseudo
+	// maybe up here check if it would result in a check? right now all moves are just pseudo. then return false
 
+
+	// here check if any of black's moves are attacking any of the tiles the king would move to
     if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
     {
         makeCastleMove(moveData);
@@ -339,6 +355,16 @@ bool Board::makeMove(MoveData* moveData)
 		enPassantBB |= BB::boardSquares[moveData->targetSquare + 8];
 
 	updateBitboardWithMove(moveData);
+	
+	// coulddddddddddd calculate all of the other piece's moves.......
+	// this should also prevent you from making a move while in check???
+	// if a bitboard of all of the other colour's moves & moveData's origin square
+	// if it is: if the king is to the left/right/above/below the origin square, check the other colour's rooks/queens 
+
+	// orrrrrrr if the whiteKingBB & blackAttacksBB, and the target square does not block this, then return false and unmake the move
+
+	// checking legality of white moves
+	
 
 	return true;
 }

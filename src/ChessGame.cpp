@@ -6,7 +6,7 @@ ChessGame::ChessGame()
 {
 	mBoard.init();
 	moveReset();
-    mMilk.activate();
+    //mMilk.activate();
     mSideToMove = SIDE_WHITE;
 }
 

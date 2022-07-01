@@ -13,7 +13,7 @@ MILK::MILK()
     mRookValue   = 500;
     mBishopValue = 330;
     mKnightValue = 320;
-    mPawnValue = 100;
+    mPawnValue   = 100;
     
     // by default
     mSide = SIDE_WHITE;
@@ -22,7 +22,6 @@ MILK::MILK()
 
 MoveData MILK::computeMove(Board* board)
 {
-    evaluatePosition(board);
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
     sf::Clock clock;
     minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
@@ -120,22 +119,17 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta)
     if (side == mSide) // if maximizing
     {
         int maxEval = -std::numeric_limits<int>::max(); // arbitrarily large number that any other position will be better
-                                
-        int moveCount = 0;
 
-        for (MoveData& move : moves)
+        for (int i = 0; i < moves.size(); i++)
         {
-            moveCount++;
             // if makemove is legal (i.e. wouldn't result in a check)
-            board->makeMove(&move);
+            board->makeMove(&moves[i]);
             int eval = minimax(board, depth - 1, !side, alpha, beta);
-            board->unmakeMove(&move);
+            board->unmakeMove(&moves[i]);
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID && depth == mDepth) && depth == mDepth)
-            {
-                mMoveToMake = move;
-            }
+                mMoveToMake = moves[i];
 
             maxEval = std::max(maxEval, eval);
             

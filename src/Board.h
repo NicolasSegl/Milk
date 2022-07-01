@@ -44,9 +44,11 @@ public:
 	Bitboard blackQueensBB;
 	Bitboard blackKingBB;
 
-	Bitboard occupiedBB  = 0;
-	Bitboard emptyBB     = 0;
-	Bitboard enPassantBB = 0;
+	Bitboard blackAttackBB = 0;
+	Bitboard whiteAttackBB = 0;
+	Bitboard occupiedBB   = 0;
+	Bitboard emptyBB      = 0;
+	Bitboard enPassantBB  = 0;
 	// attack/possible moves bb
 	// defence tables
 
@@ -72,8 +74,8 @@ private:
 	// loop i = i < 64; i++ and see if pos & whitepawns != 0. if true then pass in move generation for a pawn at that position in the board?
 	// having an occupied bitboard might make checking move validity. easier. first check if that square is occupied, then the colour, then the specific piece
 
-	void calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector);
-	void findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>& moveVector);
+	void calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB);
+	void findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB);
 	Bitboard calculatePsuedoMove(MoveData* md, Bitboard& pieceBB);
 
 	void setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveData* rookMD);

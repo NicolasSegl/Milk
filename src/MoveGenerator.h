@@ -6,11 +6,6 @@
 class MoveGenerator
 {
 private:
-    Bitboard mKnightLookupTable[64];
-    Bitboard mKingLookupTable  [64];
-    Bitboard mRookLookupTable  [64];
-    Bitboard mBishopLookupTable[64];
-    Bitboard mPawnAttackLookupTable[2][64]; // 2 because pawns have different moves depending on side
 
     void initKnightLT(Byte knightLoc);
     void initKingLT(Byte kingLoc);
@@ -18,6 +13,12 @@ private:
 
 public:
     MoveGenerator() {}
+
+    Bitboard knightLookupTable[64];
+    Bitboard kingLookupTable[64];
+    Bitboard rookLookupTable[64];
+    Bitboard bishopLookupTable[64];
+    Bitboard pawnAttackLookupTable[2][64]; // 2 because pawns have different moves depending on side
 
     void init();
 

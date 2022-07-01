@@ -26,7 +26,7 @@ void MoveGenerator::initKnightLT(Byte knightLoc)
     moves |=  knightAFileCleared << 15 | knightAFileCleared >> 17;                                               // check western vertical moves
     moves |= (knightGFileCleared & knightHFileCleared) << 10 | (knightGFileCleared & knightHFileCleared) >> 6; // check eastern horizontal moves
     moves |=  knightHFileCleared << 17 | knightHFileCleared >> 15;                                               // check eastern vertiacal moves
-    mKnightLookupTable[knightLoc] = moves;
+    knightLookupTable[knightLoc] = moves;
 }
 
 void MoveGenerator::initKingLT(Byte kingLoc)
@@ -37,7 +37,7 @@ void MoveGenerator::initKingLT(Byte kingLoc)
     Bitboard kingHFileCleared = BB::boardSquares[kingLoc] & BB::fileClear[BB::FILE_H];
 
     // consider all ordinal and cardinal directions
-    mKingLookupTable[kingLoc] = kingAFileCleared << 7 | kingAFileCleared >> 1 | kingAFileCleared >> 9 | BB::boardSquares[kingLoc] << 8 |
+    kingLookupTable[kingLoc] = kingAFileCleared << 7 | kingAFileCleared >> 1 | kingAFileCleared >> 9 | BB::boardSquares[kingLoc] << 8 |
            kingHFileCleared << 9 | kingHFileCleared << 1 | kingHFileCleared >> 7 | BB::boardSquares[kingLoc] >> 8;
 }
 
@@ -47,28 +47,28 @@ void MoveGenerator::initPawnLT(Colour side, Byte pawnLoc)
     Bitboard pawnHFileCleared = BB::boardSquares[pawnLoc] & BB::fileClear[BB::FILE_H];
 
     if (side == SIDE_WHITE)
-        mPawnAttackLookupTable[SIDE_WHITE][pawnLoc] = pawnAFileCleared << 7 | pawnHFileCleared << 9;
+        pawnAttackLookupTable[SIDE_WHITE][pawnLoc] = pawnAFileCleared << 7 | pawnHFileCleared << 9;
     else if (side == SIDE_BLACK)
-        mPawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileCleared >> 9 | pawnHFileCleared >> 7;
+        pawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileCleared >> 9 | pawnHFileCleared >> 7;
 }
 
 Bitboard MoveGenerator::computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPieces)
 {
 	// we already have predefined moves for the king so we need only index the correct element of the lookup table
 	// then we simply ensure that we aren't allowing moves onto friendly pieces
-	return mKingLookupTable[pieceCoord] & ~friendlyPieces;
+	return kingLookupTable[pieceCoord] & ~friendlyPieces;
 }
 
 Bitboard MoveGenerator::computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPieces)
 {
 	// same process as above :D
-    return mKnightLookupTable[pieceCoord] & ~friendlyPieces;
+    return knightLookupTable[pieceCoord] & ~friendlyPieces;
 }
 
 Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard emptyBB, Bitboard enPassantBB)
 {
 	// if it's white we need to mask ranks to see if it has permissions to move two squares ahead
-	Bitboard moves = (mPawnAttackLookupTable[side][pieceCoord] & enemyPieces) | (mPawnAttackLookupTable[side][pieceCoord] & enPassantBB);
+	Bitboard moves = (pawnAttackLookupTable[side][pieceCoord] & enemyPieces) | (pawnAttackLookupTable[side][pieceCoord] & enPassantBB);
 
 	if (side == SIDE_WHITE)
 	{

@@ -2,7 +2,7 @@
 
 namespace pst
 {
-	// lmao fix the formatting of the tables later
+	// taken from https://www.chessprogramming.org/Simplified_Evaluation_Function
 
 	int pawnTable[64] =
 	{
