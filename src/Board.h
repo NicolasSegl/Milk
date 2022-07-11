@@ -44,14 +44,15 @@ public:
 	Bitboard blackQueensBB;
 	Bitboard blackKingBB;
 
-	Bitboard blackAttackBB = 0;
-	Bitboard whiteAttackBB = 0;
+	//Bitboard blackAttackBB = 0;
+	//Bitboard whiteAttackBB = 0;
 	Bitboard occupiedBB   = 0;
 	Bitboard emptyBB      = 0;
 	Bitboard enPassantBB  = 0;
-	// attack/possible moves bb
-	// defence tables
-
+    // defence tables
+    
+    Byte movePrivileges;
+    
 private:
 	Bitboard mAttackTable[64]{ 0 };
 
@@ -59,7 +60,6 @@ private:
 	std::vector<MoveData> mBlackMoves;
 
     MoveGenerator mMoveGenerator;
-    Byte mMovePrivileges;
 
 	// compare which moves are defending a piece of their own :D
 	// by separating all valid moves with those moves that attack pieces, we can hasten the search algorithm. consider moves that take first
@@ -70,19 +70,14 @@ private:
 	void setBitboards();
 	Bitboard* getPieceBitboard(Byte square, Colour side = -1); // -1 indicates that no value was passed in
 
-	// an array of 64 bitboards, each representing one square of the board! can & them and check if != 0 to see if that piece is in that square
-	// loop i = i < 64; i++ and see if pos & whitepawns != 0. if true then pass in move generation for a pawn at that position in the board?
-	// having an occupied bitboard might make checking move validity. easier. first check if that square is occupied, then the colour, then the specific piece
-
-	void calculatePieceMoves(Colour Side, Byte originSquare, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB);
-	void findMoveCaptures(Bitboard moves, MoveData& md, std::vector<MoveData>& moveVector, Bitboard& colourAttackBB);
-	Bitboard calculatePsuedoMove(MoveData* md, Bitboard& pieceBB);
-
+    void setCastlePrivileges(MoveData* castleMoveData, bool isKing);
 	void setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveData* rookMD);
 	bool makeCastleMove(MoveData* moveData);
 
 	void updateBitboardWithMove(MoveData* moveData);
 	void undoPromotion(MoveData* moveData);
+    Byte computedKingSquare(Bitboard kingBB);
+    bool squareAttacked(Byte square, Colour attackingSide);
 
 public:
 	Board() {}
@@ -95,6 +90,5 @@ public:
 
 	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;     }
 	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;     }
-    Byte getMovePrivileges()               { return mMovePrivileges; }
     std::vector<MoveData>& getMoves(Colour side);
 };

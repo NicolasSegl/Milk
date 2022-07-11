@@ -26,7 +26,7 @@ private:
 	std::vector<MoveData>& getMoves();
 
 	void getGUIInput();
-    void makeMove(MoveData* moveData);
+    bool makeMove(MoveData* moveData);
 
 public:
 	ChessGame();

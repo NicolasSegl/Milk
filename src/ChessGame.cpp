@@ -6,7 +6,7 @@ ChessGame::ChessGame()
 {
 	mBoard.init();
 	moveReset();
-    //mMilk.activate();
+    mMilk.activate();
     mSideToMove = SIDE_WHITE;
 }
 
@@ -77,7 +77,7 @@ void ChessGame::getGUIInput()
 }
 
 // no castle moves are being generated ... 
-void ChessGame::makeMove(MoveData* moveData)
+bool ChessGame::makeMove(MoveData* moveData)
 {
     if (mBoard.makeMove(moveData))
     {
@@ -90,7 +90,11 @@ void ChessGame::makeMove(MoveData* moveData)
 
         moveHistory.push_back(new MoveData);
         *moveHistory.back() = *moveData;
+        
+        return true;
     }
+    else
+        return false;
 }
 
 void ChessGame::runGUI()
@@ -118,21 +122,8 @@ void ChessGame::runGUI()
 			for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++)
 			{
 				if (moves[moveIndex].originSquare == mOriginSquare && moves[moveIndex].targetSquare == mTargetSquare)
-                    if (mBoard.makeMove(&moves[moveIndex]))
-                    {
+                    if (makeMove(&moves[moveIndex]))
                         moveMade = true;
-                        mGUI.setMoveColours(&moves[moveIndex]);
-                        mSideToMove = !mSideToMove;
-
-						if (moves[moveIndex].pieceBB == &mBoard.whitePawnsBB || moves[moveIndex].pieceBB == &mBoard.blackPawnsBB)
-							if (moves[moveIndex].targetSquare >= 56 || moves[moveIndex].targetSquare <= 7)
-								mBoard.promotePiece(&moves[moveIndex], MoveData::EncodingBits::QUEEN_PROMO);
-
-						moveHistory.push_back(new MoveData);
-						*moveHistory.back() = moves[moveIndex];
-
-                        break;
-                    }
 			}
 
 			moveReset();

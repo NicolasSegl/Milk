@@ -51,6 +51,7 @@ struct MoveData
     // castling rights, en passant, half-move counter... etc https://www.chessprogramming.org/Encoding_Moves
     EncodingBits moveType  = EncodingBits::REGULAR;
     Byte privilegesRevoked = 0;
+    Byte moveScore;
 
     void setMoveType(EncodingBits mt) { moveType = mt; }
 };

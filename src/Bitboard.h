@@ -56,8 +56,8 @@ namespace BB
 	}
 
     extern Bitboard boardSquares[64];
-    extern Bitboard fileClear[8];
-    extern Bitboard rankClear[8];
+    extern Bitboard fileClear[8]; // the vertical
+    extern Bitboard rankClear[8]; // the horizontal
 
     void initialize();
     void printBitboard(Bitboard bitboard);
