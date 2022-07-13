@@ -76,8 +76,6 @@ private:
 
 	void updateBitboardWithMove(MoveData* moveData);
 	void undoPromotion(MoveData* moveData);
-    Byte computedKingSquare(Bitboard kingBB);
-    bool squareAttacked(Byte square, Colour attackingSide);
 
 public:
 	Board() {}
@@ -86,7 +84,12 @@ public:
 	bool makeMove(MoveData* moveData);
 	bool unmakeMove(MoveData* moveData);
 	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
+
 	void calculateSideMoves(Colour side);
+	void calculateSideMovesCapturesOnly(Colour side);
+
+	Byte computedKingSquare(Bitboard kingBB);
+	bool squareAttacked(Byte square, Colour attackingSide);
 
 	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;     }
 	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;     }

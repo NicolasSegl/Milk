@@ -10,10 +10,14 @@ int main()
 }
 
 // TODO
+// king can put itself into check (if its a pawn attacking the square)
+//	this is because it is just checking where the pawns we have can attack, so &ing it doesnt actually do anything
+// 
 // move ordering
 //  killer move heuristic!
 //  historic heuristic
 // quiscience search --- currently working on this
+//	consider also pawn promotions/advances
 // figure out how this actually works so we aren't just adding it in brainlessly eh?
 
 // make all structures as small as possible. make movedata use bits set to get data

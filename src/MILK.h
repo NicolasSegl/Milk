@@ -6,12 +6,15 @@
 #include "MoveData.h"
 #include "Board.h"
 
-const int MILK_MAX_DEPTH = 25;
+const int MILK_MAX_DEPTH = 10;
 
 // the ai class
 class MILK
 {
 private:
+    int mNodes;
+    int mQuietNodes;
+
     enum MVV_LVAPieceTypes
     {
         KING,
@@ -45,11 +48,14 @@ private:
     bool mActive = false;
     
     int minimax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply);
-    int evaluatePosition(Board* board);
+    int negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply);
+    int quietMoveSearch(Board* board, Colour side, int alpha, int beta);
+
     void assignMoveScores(Board* board, std::vector<MoveData>& moves);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
-    
-    int quiescenceSearch(Board* board, int alpha, int beta);
+
+    int evaluatePosition(Board* board);
+    int calculateExtension(Board* board, Colour side);
 
 public:
     MILK();

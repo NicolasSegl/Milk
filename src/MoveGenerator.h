@@ -15,9 +15,9 @@ private:
     void initPawnLT(Colour side, Byte pawnLoc);
     
     // the following functions are used when generating moves
-    void calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec);
+    void calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly);
     void calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
-    void findMoveCaptures(Board* board, Bitboard moves, MoveData& md, std::vector<MoveData>& moveVec);
+    void findMoveCaptures(Board* board, Bitboard moves, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly);
     Bitboard calculatePsuedoMove(Board* board, MoveData* md, Bitboard& pieceBB);
     void setCastlePrivileges(Board* board, MoveData* castleMoveData, bool isKing);
     Bitboard* getPieceBitboard(Board* board, Byte square, Colour side = -1); // -1 indicates that no value was passed in
@@ -42,6 +42,6 @@ public:
     Bitboard computeSpecialMoves();
     MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupied, Privilege castleType);
     
-    void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
-    void generateCaptureMoves(std::vector<MoveData>& moveVec, Colour side, Board* board);
+    void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly = false);
+    void calculateCaptureMoves(Board* board, std::vector<MoveData>& moveVec, Colour side);
 };

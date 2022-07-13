@@ -169,15 +169,12 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
              (privileges & (int)Privilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
         {
             // check if the castle would be legal
-            for (int tile = lower; tile < higher; tile++) // king is on tile 4,
+            for (int tile = lower; tile < higher; tile++)
                 if (BB::boardSquares[tile] & occupied)
                 {
-                  //  std::cout << "occupied: \n";
-                    //BB::printBitboard(occupied);
                     md.setMoveType(MoveData::EncodingBits::INVALID);
                     break;
                 }
-                    //md.setMoveType(MoveData::EncodingBits::INVALID);
 
             if (md.moveType != MoveData::EncodingBits::INVALID)
             {
@@ -201,7 +198,7 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
              (privileges & (int)Privilege::BLACK_LONG_CASTLE) && side == SIDE_BLACK)
         {
             // check if the castle would be legal
-            for (int tile = higher; tile > lower; tile--) // king is on tile 4,
+            for (int tile = higher; tile > lower; tile--)
                 if (BB::boardSquares[tile] & occupied)
                 {
                     md.setMoveType(MoveData::EncodingBits::INVALID);
@@ -227,16 +224,9 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
     return md;
 }
 
-void MoveGenerator::generateCaptureMoves(std::vector<MoveData>& moveVec, Colour side, Board* board)
+void MoveGenerator::calculateCaptureMoves(Board* board, std::vector<MoveData>& moveVec, Colour side)
 {
-    moveVec.clear();
-    for (int square = 0; square < 64; square++)
-    {
-        // the above functions return bitboards right? just compare them with the board->blackPieces
-        // these are the only moves that will be capture moves
-     //   if (BB::boardSquares[square] & )
-        // just use the function currently in Board, but only push_back() moves that are capture moves
-    }
+    calculateSideMoves(board, side, moveVec, true);
 }
 
 // side is a default value with a value of -1. this value indicates no side was specified and to search all bitboards
@@ -266,17 +256,16 @@ Bitboard* MoveGenerator::getPieceBitboard(Board* board, Byte square, Colour side
     return nullptr;
 }
 
-void MoveGenerator::calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec)
+void MoveGenerator::calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly)
 {
-    //std::vector<MoveData>& sideMovesRef = side == SIDE_WHITE ? mWhiteMoves : mBlackMoves;
-
     moveVec.clear();
     moveVec.reserve(100);
     
     for (int square = 0; square < 64; square++)
-        calculatePieceMoves(board, side, square, moveVec);
+        calculatePieceMoves(board, side, square, moveVec, captureOnly);
 
-    calculateCastleMoves(board, side, moveVec);
+    if (!captureOnly)
+        calculateCastleMoves(board, side, moveVec);
 }
 
 void MoveGenerator::calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& movesVec)
@@ -307,7 +296,7 @@ void MoveGenerator::calculateCastleMoves(Board* board, Colour side, std::vector<
         movesVec.push_back(longCastleMD);
 }
 
-void MoveGenerator::calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec)
+void MoveGenerator::calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly)
 {
     MoveData md;
     
@@ -328,12 +317,13 @@ void MoveGenerator::calculatePieceMoves(Board* board, Colour side, Byte originSq
         moves = calculatePsuedoMove(board, &md, *pieceBBPtr);
 
         if (moves > 0)
-            findMoveCaptures(board, moves, md, moveVec);
+            findMoveCaptures(board, moves, md, moveVec, captureOnly);
     }
 }
 
 void MoveGenerator::setCastlePrivileges(Board* board, MoveData* md, bool isKing)
 {
+    // its giving the permissions BACK
     if (isKing)
     {
         if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->movePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
@@ -386,7 +376,7 @@ Bitboard MoveGenerator::calculatePsuedoMove(Board* board, MoveData* md, Bitboard
 }
 
 // note that this function (as of now) actually adds the moves to the moveVector as well
-void MoveGenerator::findMoveCaptures(Board* board, Bitboard moves, MoveData& md, std::vector<MoveData>& moveVec)
+void MoveGenerator::findMoveCaptures(Board* board, Bitboard moves, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly)
 {
     for (int square = 0; square < 64; square++)
     {
@@ -419,18 +409,30 @@ void MoveGenerator::findMoveCaptures(Board* board, Bitboard moves, MoveData& md,
                 md.enPassantBB = board->enPassantBB;
 
             // remove castling privileges if a rook was captured
+            // we need to then reset the privileges revoked for the next move, 
+            // so that the privileges don't just get removed for each and every move no matter what
+            bool resetPrivileges = false;
             if (md.capturedPieceBB == &board->blackRooksBB)
             {
-                if (md.targetSquare == 63)        md.privilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
-                else if (md.targetSquare == 56) md.privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
+                resetPrivileges = true;
+                if (md.targetSquare == 63 && (board->movePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))     md.privilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
+                else if (md.targetSquare == 56 && (board->movePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE)) md.privilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
             }
             else if (md.capturedPieceBB == &board->whiteRooksBB)
             {
-                if (md.targetSquare == 7)        md.privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
-                else if (md.targetSquare == 0)  md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
+                resetPrivileges = true;
+                if (md.targetSquare == 7 && (board->movePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))     md.privilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
+                else if (md.targetSquare == 0 && (board->movePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE)) md.privilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
             }
 
-            moveVec.push_back(md);
+            if (!captureOnly)
+                moveVec.push_back(md);
+            else
+                if (md.capturedPieceBB)
+                    moveVec.push_back(md);
+
+            if (resetPrivileges)
+                md.privilegesRevoked = 0;
         }
     }
 }
