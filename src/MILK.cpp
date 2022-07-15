@@ -161,20 +161,13 @@ int MILK::calculateExtension(Board* board, Colour side)
 // understand this before
 // what is a beta cuttoff? why are we comparing standpat and alpha?
 // then put in delta pruning
-// but first, fix it just making garbage moves cause it's scared of this still ?
-// it's defiitely just looking way too deeply into every move. make it only consider moves that would result in considerable changes?
-// but it shouldn't really matter how far down it looks
-// look into this. the moves are quiet if no SIGNIFICANT change can happen......
-// it's getting confused searching so deeply. it is thinking of wild ass sequences and sacrificing pieces to do them?
 
 // okay so even just allowing for a SINGLE check of the capture moves after 5 ply is making these stupid ass moves
 // this proves that NO, IT IS NOT JUST GETTING CONFUSED BY LOOKING TOO DEEPLY
+// in fact, it makes exactly the same moves? regardless of the ply allowed ?
 
 int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte ply)
 {
-    if (ply >= 6)
-        return getScoreRelativeToSide(evaluatePosition(board), side);
-
     // the lower bound for the best possible move for the moving side. if no capture move would result in a better position,
     // then we just would simply not make the capture move (and return the calculated best move evaluation, aka alpha)
     int standPat = getScoreRelativeToSide(evaluatePosition(board), side);
@@ -184,6 +177,9 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
 
     if (standPat > alpha)
         alpha = standPat;
+
+    if (ply >= mDepth + 5)
+        return alpha;
 
     board->calculateSideMovesCapturesOnly(side);
     std::vector<MoveData> moves = board->getMoves(side);
@@ -208,6 +204,7 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byt
 {
     if (depth == 0) // at the end of regular search
     {
+        // temporary until i convert this to negamax
         if (side != mSide)
             return -quietMoveSearch(board, side, alpha, beta, ply);
         else
@@ -275,8 +272,7 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byt
     }
 }
 
-// try to fully understand negamax before finishing this ya goofy ass. first to quiet move search tho
-int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
+/*int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
 {
     //if (depth == 0)
     //    return evaluatePosition(board);
@@ -320,3 +316,4 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
 
     return alpha;
 }
+*/
