@@ -18,6 +18,8 @@ int main()
 //  historic heuristic
 // quiscience search --- currently working on this
 //	consider also pawn promotions/advances
+// null moves after this ! ! ! after quiet move search
+// futility pruning
 // figure out how this actually works so we aren't just adding it in brainlessly eh?
 
 // make all structures as small as possible. make movedata use bits set to get data
@@ -25,6 +27,7 @@ int main()
 // for the above maybe look to other chess engines online. some have classes only for Search and one for making Moves, etc
 // null moves
 // extensions
+// search windows
 //  one simple extension is to simply increase depth by 1 when under check
 // reductions
 // menus

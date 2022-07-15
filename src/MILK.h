@@ -6,7 +6,7 @@
 #include "MoveData.h"
 #include "Board.h"
 
-const int MILK_MAX_DEPTH = 10;
+const int MILK_MAX_DEPTH = 15;
 
 // the ai class
 class MILK
@@ -47,9 +47,11 @@ private:
     MoveData mMoveToMake;
     bool mActive = false;
     
+    int getScoreRelativeToSide(int score, Colour side) { return score * (1 - 2 * (Byte)side); }
+
     int minimax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply);
     int negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply);
-    int quietMoveSearch(Board* board, Colour side, int alpha, int beta);
+    int quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte ply);
 
     void assignMoveScores(Board* board, std::vector<MoveData>& moves);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
