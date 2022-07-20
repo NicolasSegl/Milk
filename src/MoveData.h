@@ -30,6 +30,7 @@ struct MoveData
         BISHOP_PROMO         = 1 << 9,
         KNIGHT_PROMO         = 1 << 10,
         EN_PASSANT_SQUARE    = 1 << 11,
+        PAWN_PROMOTION       = 1 << 12,
     };
 
     // these must be pointers for the sake of incremental updating
@@ -50,7 +51,7 @@ struct MoveData
 
     // castling rights, en passant, half-move counter... etc https://www.chessprogramming.org/Encoding_Moves
     EncodingBits moveType  = EncodingBits::REGULAR;
-    Byte privilegesRevoked = 0;
+    Byte castlePrivilegesRevoked = 0;
     Byte moveScore = 0;
 
     void setMoveType(EncodingBits mt) { moveType = mt; }

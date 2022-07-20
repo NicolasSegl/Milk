@@ -39,11 +39,11 @@ namespace BB
 		/* predefined bitboards for piece starting positions (little endian file-rank mapping) */
 
 		// white pieces
-		const Bitboard cWPawnsStartBB   = 65280;
+		const Bitboard cWPawnsStartBB	= 65280;
 		const Bitboard cWRooksStartBB   = 129;
 		const Bitboard cWKnightsStartBB = 66;
-		const Bitboard cWBishopsStartBB = 36;
-		const Bitboard cWQueensStartBB  = 8;
+		const Bitboard cWBishopsStartBB =  36;
+		const Bitboard cWQueensStartBB  =  8;
 		const Bitboard cWKingStartBB    = 16;
 
 		// black pieces

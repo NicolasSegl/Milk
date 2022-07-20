@@ -122,8 +122,11 @@ void ChessGame::runGUI()
 			for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++)
 			{
 				if (moves[moveIndex].originSquare == mOriginSquare && moves[moveIndex].targetSquare == mTargetSquare)
-                    if (makeMove(&moves[moveIndex]))
-                        moveMade = true;
+					if (makeMove(&moves[moveIndex]))
+					{
+						moveMade = true;
+						break;
+					}
 			}
 
 			moveReset();

@@ -30,7 +30,7 @@ void Board::setBitboards()
     occupiedBB = whitePiecesBB | blackPiecesBB;
     emptyBB = ~occupiedBB;
 
-    movePrivileges = ~(0); // full priveleges for both sides at the start of the game
+    castlePrivileges = ~(0); // full priveleges for both sides at the start of the game
 }
 
 void Board::init()
@@ -190,14 +190,14 @@ bool Board::makeMove(MoveData* moveData)
 	{
 		if (makeCastleMove(moveData))
 		{
-			movePrivileges ^= moveData->privilegesRevoked;
+			castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 			return true;
 		}
 		else
 			return false;
 	}
 
-	movePrivileges ^= moveData->privilegesRevoked;
+	castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 
 	enPassantBB = 0;
 	if (moveData->pieceBB == &whitePawnsBB && moveData->targetSquare - moveData->originSquare == 16) // if move is en passant
@@ -223,11 +223,12 @@ bool Board::unmakeMove(MoveData* moveData)
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
 	{
 		makeCastleMove(moveData);
-        movePrivileges ^= moveData->privilegesRevoked;
+		// this needs to somehow give perms back?
+		castlePrivileges ^= moveData->castlePrivilegesRevoked;
 		return true;
 	}
     
-	movePrivileges  ^= moveData->privilegesRevoked;
+	castlePrivileges ^= moveData->castlePrivilegesRevoked;
 	enPassantBB      = moveData->enPassantBB;
     
 	undoPromotion(moveData);

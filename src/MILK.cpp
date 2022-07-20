@@ -6,9 +6,6 @@
 #include <algorithm>
 #include <SFML/Graphics.hpp>
 
-const Byte capture = 1;
-
-
 // still issues with castling making more kings
 MILK::MILK()
 {
@@ -20,7 +17,7 @@ MILK::MILK()
     mPawnValue   = 100;
     
     // by default
-    mSide = SIDE_WHITE;
+    mSide = SIDE_BLACK;
     mDepth = 5;
 }
 
@@ -31,7 +28,8 @@ MoveData MILK::computeMove(Board* board)
 
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
     sf::Clock clock;
-    minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
+    std::cout << "to be eval: " << minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
+    std::cout << "current eval: " << evaluatePosition(board) << std::endl;
     //negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
     std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
     //std::cout << "number of regular nodes: " << mNodes << std::endl;
@@ -39,7 +37,6 @@ MoveData MILK::computeMove(Board* board)
     return mMoveToMake;
 }
 
-// do something to find the string of moves that gets eval = 100 at the start?
 int MILK::evaluatePosition(Board* board)
 {
     int whiteEval = 0;
@@ -51,67 +48,19 @@ int MILK::evaluatePosition(Board* board)
             continue;
 
         // consider piece value and piece square table
-        if (BB::boardSquares[square] & board->whitePawnsBB)
-        {
-            whiteEval += mPawnValue;
-            whiteEval += pst::pawnTable[63 - square];
-        }
-        else if (BB::boardSquares[square] & board->whiteKnightsBB)
-        {
-            whiteEval += mKnightValue;
-            whiteEval += pst::knightTable[63 - square];
-        }
-        else if (BB::boardSquares[square] & board->whiteBishopsBB)
-        {
-            whiteEval += mBishopValue;
-            whiteEval += pst::bishopTable[63 - square];
-        }
-        else if (BB::boardSquares[square] & board->whiteRooksBB)
-        {
-            whiteEval += mRookValue;
-            whiteEval += pst::rookTable[63 - square];
-        }
-        else if (BB::boardSquares[square] & board->whiteQueensBB)
-        {
-            whiteEval += mQueenValue;
-            whiteEval += pst::queenTable[63 - square];
-        }
-        else if (BB::boardSquares[square] & board->whiteKingBB)
-        {
-            whiteEval += mKingValue;
-            whiteEval += pst::kingTable[63 - square];
-        }
-        
-        else if (BB::boardSquares[square] & board->blackPawnsBB)
-        {
-            blackEval += mPawnValue;
-            blackEval += pst::pawnTable[square];
-        }
-        else if (BB::boardSquares[square] & board->blackKnightsBB)
-        {
-            blackEval += mKnightValue;
-            blackEval += pst::knightTable[square];
-        }
-        else if (BB::boardSquares[square] & board->blackBishopsBB)
-        {
-            blackEval += mBishopValue;
-            blackEval += pst::bishopTable[square];
-        }
-        else if (BB::boardSquares[square] & board->blackRooksBB)
-        {
-            blackEval += mRookValue;
-            blackEval += pst::rookTable[square];
-        }
-        else if (BB::boardSquares[square] & board->blackQueensBB)
-        {
-            blackEval += mQueenValue;
-            blackEval += pst::queenTable[square];
-        }
-        else if (BB::boardSquares[square] & board->blackKingBB)
-        {
-            blackEval += mKingValue;
-            blackEval += pst::kingTable[square];
-        }
+        if      (BB::boardSquares[square] & board->whitePawnsBB)   whiteEval += mPawnValue   + pst::pawnTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteKnightsBB) whiteEval += mKnightValue + pst::knightTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteBishopsBB) whiteEval += mBishopValue + pst::bishopTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteRooksBB)   whiteEval += mRookValue   + pst::rookTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteQueensBB)  whiteEval += mQueenValue  + pst::queenTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteKingBB)    whiteEval += mKingValue   + pst::kingTable[63 - square];
+         
+        else if (BB::boardSquares[square] & board->blackPawnsBB)   blackEval += mPawnValue   + pst::pawnTable[square];
+        else if (BB::boardSquares[square] & board->blackKnightsBB) blackEval += mKnightValue + pst::knightTable[square];
+        else if (BB::boardSquares[square] & board->blackBishopsBB) blackEval += mBishopValue + pst::bishopTable[square];
+        else if (BB::boardSquares[square] & board->blackRooksBB)   blackEval += mRookValue   + pst::rookTable[square];
+        else if (BB::boardSquares[square] & board->blackQueensBB)  blackEval += mQueenValue  + pst::queenTable[square];
+        else if (BB::boardSquares[square] & board->blackKingBB)    blackEval += mKingValue   + pst::kingTable[square];
     }
     
     return whiteEval - blackEval;
@@ -162,23 +111,27 @@ int MILK::calculateExtension(Board* board, Colour side)
 // what is a beta cuttoff? why are we comparing standpat and alpha?
 // then put in delta pruning
 
-// okay so even just allowing for a SINGLE check of the capture moves after 5 ply is making these stupid ass moves
-// this proves that NO, IT IS NOT JUST GETTING CONFUSED BY LOOKING TOO DEEPLY
-// in fact, it makes exactly the same moves? regardless of the ply allowed ?
-
 int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte ply)
 {
-    // the lower bound for the best possible move for the moving side. if no capture move would result in a better position,
+    // the lower bound for the best possible move for the moving side. if no capture move would result in a better position for the playing side,
     // then we just would simply not make the capture move (and return the calculated best move evaluation, aka alpha)
     int standPat = getScoreRelativeToSide(evaluatePosition(board), side);
 
     if (standPat >= beta)
         return beta;
 
+    // delta pruning
+
+
     if (standPat > alpha)
         alpha = standPat;
 
-    if (ply >= mDepth + 5)
+    //alpha = std::max(standPat, alpha);
+
+    if (alpha >= beta)
+        return beta;
+
+    if (ply >= mDepth + 10)
         return alpha;
 
     board->calculateSideMovesCapturesOnly(side);
@@ -200,15 +153,21 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
 }
 
 // convert this to negamax?
+// if no move can be made and the side to move's king is in check, return inf
+
 int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
 {
     if (depth == 0) // at the end of regular search
     {
+        //return evaluatePosition(board);
         // temporary until i convert this to negamax
+
+        // should we be inverting alpha/beta here?
+
         if (side != mSide)
-            return -quietMoveSearch(board, side, alpha, beta, ply);
+            return -quietMoveSearch(board, side, -beta, -alpha, ply);
         else
-            return quietMoveSearch(board, side, alpha, beta, ply);
+            return quietMoveSearch(board, side, -beta, -alpha, ply);
 
         //return evaluatePosition(board);
     }
@@ -228,13 +187,15 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byt
             // if makemove is legal (i.e. wouldn't result in a check)
             if (board->makeMove(&moves[i]))
             {
+                if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
+                    board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
+
                 int eval = minimax(board, depth - 1 + calculateExtension(board, side), !side, alpha, beta, ply + 1);
                 board->unmakeMove(&moves[i]);
 
                 // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
                 if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
                 {
-                   // std::cout << "max eval: " << eval << std::endl;
                     mMoveToMake = moves[i];
                 }
 
@@ -258,6 +219,9 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byt
             
             if (board->makeMove(&moves[i]))
             {
+                if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
+                    board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
+
                 int eval = minimax(board, depth - 1 + calculateExtension(board, side), !side, alpha, beta, ply + 1);
                 board->unmakeMove(&moves[i]);
                 minEval = std::min(minEval, eval);

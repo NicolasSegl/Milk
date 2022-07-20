@@ -51,7 +51,7 @@ public:
 	Bitboard enPassantBB  = 0;
     // defence tables
     
-    Byte movePrivileges;
+    Byte castlePrivileges;
     
 private:
 	Bitboard mAttackTable[64]{ 0 };

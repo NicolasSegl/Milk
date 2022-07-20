@@ -17,11 +17,15 @@ private:
     // the following functions are used when generating moves
     void calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly);
     void calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
-    void findMoveCaptures(Board* board, Bitboard moves, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly);
     Bitboard calculatePsuedoMove(Board* board, MoveData* md, Bitboard& pieceBB);
+
+    void setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md);
+    bool doesCaptureAffectCastle(Board* board, MoveData* md);
+    void addMoves(Board* board, Bitboard movesBB, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly);
+
+    void setCastleMovePrivilegesRevoked(Colour side, Byte privileges, Byte* privilegesToBeRevoked);
     void setCastlePrivileges(Board* board, MoveData* castleMoveData, bool isKing);
     Bitboard* getPieceBitboard(Board* board, Byte square, Colour side = -1); // -1 indicates that no value was passed in
-
 
 public:
     MoveGenerator() {}
@@ -32,15 +36,15 @@ public:
     void init();
 
     // pseudo meaning that they do not account for if they result in a check!
-    Bitboard computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPieces);
-    Bitboard computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPieces);
-    Bitboard computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPieces, Bitboard occupiedSquares, Bitboard enPassantBB);
-    Bitboard computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces);
-    Bitboard computePseudoBishopMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces);
-    Bitboard computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieces, Bitboard friendlyPieces);
+    Bitboard computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPiecesBB, Bitboard occupiedSquaresBB, Bitboard enPassantBB);
+    Bitboard computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoBishopMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieceBB, Bitboard friendlyPiecesBB);
 
     Bitboard computeSpecialMoves();
-    MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupied, Privilege castleType);
+    MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, Privilege castleType);
     
     void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly = false);
     void calculateCaptureMoves(Board* board, std::vector<MoveData>& moveVec, Colour side);
