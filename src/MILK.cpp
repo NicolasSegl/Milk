@@ -18,20 +18,21 @@ MILK::MILK()
     
     // by default
     mSide = SIDE_BLACK;
-    mDepth = 5;
+    mDepth = 6;
 }
 
 MoveData MILK::computeMove(Board* board)
 {
-    mQuietNodes = 0;
     mNodes = 0;
-
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
     sf::Clock clock;
-    std::cout << "to be eval: " << minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
+    //std::cout << "to be eval: " << minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
+    std::cout << "to be eval: " << negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
     std::cout << "current eval: " << evaluatePosition(board) << std::endl;
     //negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
     std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
+
+    std::cout << "number of nodes: " << mNodes << std::endl;
     //std::cout << "number of regular nodes: " << mNodes << std::endl;
     //std::cout << "number of quiet nodes: " << mQuietNodes << std::endl;
     return mMoveToMake;
@@ -47,13 +48,20 @@ int MILK::evaluatePosition(Board* board)
         if (BB::boardSquares[square] & board->emptyBB) // optimization
             continue;
 
+        // for white pawns
+        {
+            // this is checking blocked pawns
+            // if (northOne (i.e. << 8) & whitePawns), then SUBTRACT a value as a penalty
+
+        }
+
         // consider piece value and piece square table
         if      (BB::boardSquares[square] & board->whitePawnsBB)   whiteEval += mPawnValue   + pst::pawnTable[63 - square];
         else if (BB::boardSquares[square] & board->whiteKnightsBB) whiteEval += mKnightValue + pst::knightTable[63 - square];
         else if (BB::boardSquares[square] & board->whiteBishopsBB) whiteEval += mBishopValue + pst::bishopTable[63 - square];
         else if (BB::boardSquares[square] & board->whiteRooksBB)   whiteEval += mRookValue   + pst::rookTable[63 - square];
         else if (BB::boardSquares[square] & board->whiteQueensBB)  whiteEval += mQueenValue  + pst::queenTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteKingBB)    whiteEval += mKingValue   + pst::kingTable[63 - square];
+        else if (BB::boardSquares[square] & board->whiteKingBB)    whiteEval += mKingValue   + pst::kingTable[63 - square]; // here check if pawns are near the king (shield)
          
         else if (BB::boardSquares[square] & board->blackPawnsBB)   blackEval += mPawnValue   + pst::pawnTable[square];
         else if (BB::boardSquares[square] & board->blackKnightsBB) blackEval += mKnightValue + pst::knightTable[square];
@@ -73,13 +81,33 @@ void MILK::selectMove(std::vector<MoveData>& moves, Byte startIndex)
             std::swap(moves[i], moves[startIndex]);
 }
 
-void MILK::assignMoveScores(Board* board, std::vector<MoveData>& moves)
+void MILK::assignMoveScores(Board* board, std::vector<MoveData>& moves, Byte ply)
 {
     for (int i = 0; i < moves.size(); i++)
     {
-        if (moves[i].capturedPieceBB)
-            moves[i].moveScore += MVV_LVATable[getMVV_LVAPieceType(board, moves[i].capturedPieceBB)]
-                                              [getMVV_LVAPieceType(board, moves[i].pieceBB)];
+        if (moves[i].capturedPieceBB) // move is violent
+            moves[i].moveScore += MilkConstants::MVV_LVA_OFFSET + MVV_LVATable[getMVV_LVAPieceType(board, moves[i].capturedPieceBB)]
+                                                                              [getMVV_LVAPieceType(board, moves[i].pieceBB)];
+        else // move is quiet
+            for (int j = 0; i < MilkConstants::MAX_KILLER_MOVES; j++)
+                if (moves[i] == mKillerMoves[ply][j])
+                {
+                    moves[i].moveScore += MilkConstants::MVV_LVA_OFFSET - MilkConstants::KILLER_MOVE_SCORE;
+                    break;
+                }
+    }
+}
+
+void MILK::insertKillerMove(MoveData& move, Byte ply)
+{
+    if (move == mKillerMoves[ply][0])
+        return;
+    else
+    {
+        for (int i = 1; i < MilkConstants::MAX_KILLER_MOVES; i++)
+            mKillerMoves[ply][i] = mKillerMoves[ply][i - 1];
+
+        mKillerMoves[ply][0] = move;
     }
 }
 
@@ -113,10 +141,12 @@ int MILK::calculateExtension(Board* board, Colour side)
 
 int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte ply)
 {
+    mNodes++;
     // the lower bound for the best possible move for the moving side. if no capture move would result in a better position for the playing side,
     // then we just would simply not make the capture move (and return the calculated best move evaluation, aka alpha)
     int standPat = getScoreRelativeToSide(evaluatePosition(board), side);
 
+    // understand this
     if (standPat >= beta)
         return beta;
 
@@ -131,13 +161,19 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
     if (alpha >= beta)
         return beta;
 
-    if (ply >= mDepth + 10)
+    if (ply >= MilkConstants::MAX_PLY)
         return alpha;
 
     board->calculateSideMovesCapturesOnly(side);
     std::vector<MoveData> moves = board->getMoves(side);
+    assignMoveScores(board, moves, ply);
 
     for (int i = 0; i < moves.size(); i++)
+    {
+        selectMove(moves, i);
+       // if (moves[i].moveScore < 10)
+         //   break;
+
         if (board->makeMove(&moves[i]))
         {
             int eval = -quietMoveSearch(board, !side, -beta, -alpha, ply + 1);
@@ -148,107 +184,23 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
             if (eval > alpha)
                 alpha = eval;
         }
+    }
 
     return alpha;
 }
 
-// convert this to negamax?
-// if no move can be made and the side to move's king is in check, return inf
-
-int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
+int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
 {
-    if (depth == 0) // at the end of regular search
-    {
-        //return evaluatePosition(board);
-        // temporary until i convert this to negamax
-
-        // should we be inverting alpha/beta here?
-
-        if (side != mSide)
-            return -quietMoveSearch(board, side, -beta, -alpha, ply);
-        else
-            return quietMoveSearch(board, side, -beta, -alpha, ply);
-
-        //return evaluatePosition(board);
-    }
-
-    board->calculateSideMoves(side);
-    std::vector<MoveData> moves = board->getMoves(side);
-
-    if (side == mSide) // if maximizing
-    {
-        int maxEval = -std::numeric_limits<int>::max();
-        assignMoveScores(board, moves);
-        
-        for (int i = 0; i < moves.size(); i++)
-        {
-            selectMove(moves, i); // swaps current move with the most likely good move in the move list
-            
-            // if makemove is legal (i.e. wouldn't result in a check)
-            if (board->makeMove(&moves[i]))
-            {
-                if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
-                    board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
-
-                int eval = minimax(board, depth - 1 + calculateExtension(board, side), !side, alpha, beta, ply + 1);
-                board->unmakeMove(&moves[i]);
-
-                // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
-                if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
-                {
-                    mMoveToMake = moves[i];
-                }
-
-                maxEval = std::max(maxEval, eval);
-                alpha   = std::max(alpha, eval);
-                if (beta <= alpha)
-                    break;
-            }
-        }
-        
-        return maxEval;
-    }
-    else // if minimizing
-    {
-        int minEval = std::numeric_limits<int>::max();
-        assignMoveScores(board, moves);
-        
-        for (int i = 0; i < moves.size(); i++)
-        {
-            selectMove(moves, i); // swaps current move with the most likely good move in the move list
-            
-            if (board->makeMove(&moves[i]))
-            {
-                if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
-                    board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
-
-                int eval = minimax(board, depth - 1 + calculateExtension(board, side), !side, alpha, beta, ply + 1);
-                board->unmakeMove(&moves[i]);
-                minEval = std::min(minEval, eval);
-
-                beta = std::min(beta, eval);
-                if (beta <= alpha)
-                    break;
-            }
-        }
-        
-        return minEval;
-    }
-}
-
-/*int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
-{
-    //if (depth == 0)
-    //    return evaluatePosition(board);
+    if (depth == 0)
+        return quietMoveSearch(board, side, alpha, beta, ply);
 
     mNodes++;
+
     board->calculateSideMoves(side);
     std::vector<MoveData> moves = board->getMoves(side);
 
-    // multiply score by side ?
-
     int maxEval = -std::numeric_limits<int>::max();
-    assignMoveScores(board, moves);
+    assignMoveScores(board, moves, ply);
 
     for (int i = 0; i < moves.size(); i++)
     {
@@ -262,22 +214,17 @@ int MILK::minimax(Board* board, int depth, Colour side, int alpha, int beta, Byt
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && depth == mDepth)
-            {
-                // std::cout << "max eval: " << eval << std::endl;
                 mMoveToMake = moves[i];
-            }
 
             maxEval = std::max(maxEval, eval);
-            if (beta <= alpha)
-                break;
-
-            //if (eval >= beta)
-              //  return beta;
             alpha = std::max(alpha, eval);
-
+            if (beta <= alpha)
+            {
+                insertKillerMove(moves[i], ply);
+                break;
+            }
         }
     }
 
     return alpha;
 }
-*/

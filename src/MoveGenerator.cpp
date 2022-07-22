@@ -156,17 +156,17 @@ void MoveGenerator::setCastleMovePrivilegesRevoked(Colour side, Byte privileges,
 {
     if (side == SIDE_WHITE)
     {
-        if (privileges & (Byte)Privilege::WHITE_LONG_CASTLE)  *privilegesToBeRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
-        if (privileges & (Byte)Privilege::WHITE_SHORT_CASTLE) *privilegesToBeRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
+        if (privileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE)  *privilegesToBeRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
+        if (privileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE) *privilegesToBeRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
     }
     else
     {
-        if (privileges & (Byte)Privilege::BLACK_LONG_CASTLE)  *privilegesToBeRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
-        if (privileges & (Byte)Privilege::BLACK_SHORT_CASTLE) *privilegesToBeRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
+        if (privileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE)  *privilegesToBeRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
+        if (privileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE) *privilegesToBeRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
     }
 }
 
-MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, Privilege castleType)
+MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, CastlingPrivilege castleType)
 {
     MoveData md;
     md.side = side;
@@ -175,11 +175,11 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
 
     switch (castleType)
     {
-        case Privilege::WHITE_SHORT_CASTLE:
-        case Privilege::BLACK_SHORT_CASTLE:
+        case CastlingPrivilege::WHITE_SHORT_CASTLE:
+        case CastlingPrivilege::BLACK_SHORT_CASTLE:
         
-            if (((privileges & (Byte)Privilege::WHITE_SHORT_CASTLE) && side == SIDE_WHITE) ||
-                 (privileges & (Byte)Privilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
+            if (((privileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE) && side == SIDE_WHITE) ||
+                 (privileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
             {
 
                 if (side == SIDE_WHITE) { lower = 5;  higher = 7; }
@@ -207,11 +207,11 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
 
             break;
         
-        case Privilege::WHITE_LONG_CASTLE:
-        case Privilege::BLACK_LONG_CASTLE:
+        case CastlingPrivilege::WHITE_LONG_CASTLE:
+        case CastlingPrivilege::BLACK_LONG_CASTLE:
 
-            if (((privileges & (Byte)Privilege::WHITE_LONG_CASTLE) && side == SIDE_WHITE) ||
-                 (privileges & (Byte)Privilege::BLACK_LONG_CASTLE) && side == SIDE_BLACK)
+            if (((privileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE) && side == SIDE_WHITE) ||
+                 (privileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE) && side == SIDE_BLACK)
             {
 
                 if (side == SIDE_WHITE) { lower = 0;  higher = 3; }
@@ -299,16 +299,16 @@ void MoveGenerator::calculateCastleMoves(Board* board, Colour side, std::vector<
         if (board->whiteKingBB == 0 || board->whiteRooksBB == 0)
             return;
 
-        shortCastleMD = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, Privilege::WHITE_SHORT_CASTLE);
-        longCastleMD  = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, Privilege::WHITE_LONG_CASTLE);
+        shortCastleMD = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, CastlingPrivilege::WHITE_SHORT_CASTLE);
+        longCastleMD  = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, CastlingPrivilege::WHITE_LONG_CASTLE);
     }
     else // black castle moves
     {
         if (board->blackKingBB == 0 || board->blackRooksBB == 0)
             return;
 
-        shortCastleMD = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, Privilege::BLACK_SHORT_CASTLE);
-        longCastleMD  = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, Privilege::BLACK_LONG_CASTLE);
+        shortCastleMD = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, CastlingPrivilege::BLACK_SHORT_CASTLE);
+        longCastleMD  = computeCastleMoveData(side, board->castlePrivileges, board->occupiedBB, CastlingPrivilege::BLACK_LONG_CASTLE);
     }
     
     if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID)
@@ -347,25 +347,25 @@ void MoveGenerator::setCastlePrivileges(Board* board, MoveData* md, bool isKing)
     // its giving the permissions BACK
     if (isKing)
     {
-        if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->castlePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
-        if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->castlePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
-        if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->castlePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
-        if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->castlePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
+        if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
+        if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
+        if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
+        if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
     }
     else
     {
-        if (md->side == SIDE_WHITE && md->originSquare == 0 && (board->castlePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
-        else if (md->side == SIDE_WHITE && md->originSquare == 7 && (board->castlePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
-        else if (md->side == SIDE_BLACK && md->originSquare == 56 && (board->castlePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
-        else if (md->side == SIDE_BLACK && md->originSquare == 63 && (board->castlePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
+        if      (md->side == SIDE_WHITE && md->originSquare == 0 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
+        else if (md->side == SIDE_WHITE && md->originSquare == 7 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
+        else if (md->side == SIDE_BLACK && md->originSquare == 56 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
+        else if (md->side == SIDE_BLACK && md->originSquare == 63 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
     }
 }
 
@@ -402,20 +402,20 @@ bool MoveGenerator::doesCaptureAffectCastle(Board* board, MoveData* md)
     if (md->capturedPieceBB == &board->blackRooksBB)
     {
         doesAffectCastlePrivileges = true;
-        if (md->targetSquare == 63 && (board->castlePrivileges & (Byte)Privilege::BLACK_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_SHORT_CASTLE;
-        else if (md->targetSquare == 56 && (board->castlePrivileges & (Byte)Privilege::BLACK_LONG_CASTLE)) 
-            md->castlePrivilegesRevoked |= (Byte)Privilege::BLACK_LONG_CASTLE;
+        if (md->targetSquare == 63 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
+        else if (md->targetSquare == 56 && (board->castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
         else
             doesAffectCastlePrivileges = false;
     }
     else if (md->capturedPieceBB == &board->whiteRooksBB)
     {
         doesAffectCastlePrivileges = true;
-        if (md->targetSquare == 7 && (board->castlePrivileges & (Byte)Privilege::WHITE_SHORT_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_SHORT_CASTLE;
-        else if (md->targetSquare == 0 && (board->castlePrivileges & (Byte)Privilege::WHITE_LONG_CASTLE))
-            md->castlePrivilegesRevoked |= (Byte)Privilege::WHITE_LONG_CASTLE;
+        if (md->targetSquare == 7 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
+        else if (md->targetSquare == 0 && (board->castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
         else
             doesAffectCastlePrivileges = false;
     }

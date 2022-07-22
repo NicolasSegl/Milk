@@ -13,6 +13,10 @@ int main()
 // king can put itself into check (if its a pawn attacking the square)
 //	this is because it is just checking where the pawns we have can attack, so &ing it doesnt actually do anything
 // the ai cannot promote pieces! this will defo fuck with it's ability to use pawns well
+// add delta pruning
+// and ENDGAME PLAY
+// transposition table
+// pawn structure https://www.chessprogramming.org/Pawn_Pattern_and_Properties
 // move ordering
 //  killer move heuristic!
 //  historic heuristic

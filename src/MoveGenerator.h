@@ -44,7 +44,7 @@ public:
     Bitboard computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieceBB, Bitboard friendlyPiecesBB);
 
     Bitboard computeSpecialMoves();
-    MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, Privilege castleType);
+    MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, CastlingPrivilege castleType);
     
     void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly = false);
     void calculateCaptureMoves(Board* board, std::vector<MoveData>& moveVec, Colour side);
