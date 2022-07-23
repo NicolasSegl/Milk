@@ -39,8 +39,8 @@ void ChessGame::getGUIInput()
 			}
 			else
 			{
-				if ((mSideToMove == SIDE_WHITE && (mBoard.whitePiecesBB & BB::boardSquares[userInput.squareLoc])) ||
-					(mSideToMove == SIDE_BLACK && (mBoard.blackPiecesBB & BB::boardSquares[userInput.squareLoc])))
+				if ((mSideToMove == SIDE_WHITE && (mBoard.currentPosition.whitePiecesBB & BB::boardSquares[userInput.squareLoc])) ||
+					(mSideToMove == SIDE_BLACK && (mBoard.currentPosition.blackPiecesBB & BB::boardSquares[userInput.squareLoc])))
 				{
 					mOriginSquare = userInput.squareLoc;
 					mGUI.setSelectedSquare(userInput.squareLoc);
@@ -76,15 +76,16 @@ void ChessGame::getGUIInput()
 	}
 }
 
-// no castle moves are being generated ... 
 bool ChessGame::makeMove(MoveData* moveData)
 {
+	// here check for any outcomes (draw or a win)
     if (mBoard.makeMove(moveData))
     {
         mGUI.setMoveColours(moveData);
         mSideToMove = !mSideToMove;
 
-        if (moveData->pieceBB == &mBoard.whitePawnsBB || moveData->pieceBB == &mBoard.blackPawnsBB)
+		// ASK THE USER THIS!
+        if (moveData->pieceBB == &mBoard.currentPosition.whitePawnsBB || moveData->pieceBB == &mBoard.currentPosition.blackPawnsBB)
             if (moveData->targetSquare >= 56 || moveData->targetSquare <= 7)
                 mBoard.promotePiece(moveData, MoveData::EncodingBits::QUEEN_PROMO);
 

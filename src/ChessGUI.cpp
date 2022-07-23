@@ -181,19 +181,19 @@ void ChessGUI::updateBoard(Board* board)
 								   (7 - bit / 8) * mSquareSize + (mSquareSize - SPRITE_SIZE) / 2); // they all start top left
 		// try for bit = 0
 
-		if		(board->whitePawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_PAWN);
-		else if (board->whiteKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_KING);
-		else if (board->whiteRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::WHITE_ROOK);
-		else if (board->whiteBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_BISHOP);
-		else if (board->whiteQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::WHITE_QUEEN);
-		else if (board->whiteKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_KNIGHT);
+		if		(board->currentPosition.whitePawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_PAWN);
+		else if (board->currentPosition.whiteKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::WHITE_KING);
+		else if (board->currentPosition.whiteRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::WHITE_ROOK);
+		else if (board->currentPosition.whiteBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_BISHOP);
+		else if (board->currentPosition.whiteQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::WHITE_QUEEN);
+		else if (board->currentPosition.whiteKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::WHITE_KNIGHT);
 
-		if (board->blackPawnsBB & BB::boardSquares[bit])		drawPiece(translatedPos, Board::BLACK_PAWN);
-		else if (board->blackKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::BLACK_KING);
-		else if (board->blackRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::BLACK_ROOK);
-		else if (board->blackBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_BISHOP);
-		else if (board->blackQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::BLACK_QUEEN);
-		else if (board->blackKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_KNIGHT);
+		if		(board->currentPosition.blackPawnsBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::BLACK_PAWN);
+		else if (board->currentPosition.blackKingBB & BB::boardSquares[bit])	drawPiece(translatedPos, Board::BLACK_KING);
+		else if (board->currentPosition.blackRooksBB & BB::boardSquares[bit])   drawPiece(translatedPos, Board::BLACK_ROOK);
+		else if (board->currentPosition.blackBishopsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_BISHOP);
+		else if (board->currentPosition.blackQueensBB & BB::boardSquares[bit])  drawPiece(translatedPos, Board::BLACK_QUEEN);
+		else if (board->currentPosition.blackKnightsBB & BB::boardSquares[bit]) drawPiece(translatedPos, Board::BLACK_KNIGHT);
 	}
 
 	mWindow.display();

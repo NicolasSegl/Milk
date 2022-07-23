@@ -45,7 +45,7 @@ int MILK::evaluatePosition(Board* board)
     
     for (int square = 0; square < 64; square++)
     {
-        if (BB::boardSquares[square] & board->emptyBB) // optimization
+        if (BB::boardSquares[square] & board->currentPosition.emptyBB) // optimization
             continue;
 
         // for white pawns
@@ -56,24 +56,27 @@ int MILK::evaluatePosition(Board* board)
         }
 
         // consider piece value and piece square table
-        if      (BB::boardSquares[square] & board->whitePawnsBB)   whiteEval += mPawnValue   + pst::pawnTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteKnightsBB) whiteEval += mKnightValue + pst::knightTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteBishopsBB) whiteEval += mBishopValue + pst::bishopTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteRooksBB)   whiteEval += mRookValue   + pst::rookTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteQueensBB)  whiteEval += mQueenValue  + pst::queenTable[63 - square];
-        else if (BB::boardSquares[square] & board->whiteKingBB)    whiteEval += mKingValue   + pst::kingTable[63 - square]; // here check if pawns are near the king (shield)
+        if      (BB::boardSquares[square] & board->currentPosition.whitePawnsBB)   whiteEval += mPawnValue   + pst::pawnTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += mKnightValue + pst::knightTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += mBishopValue + pst::bishopTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteRooksBB)   whiteEval += mRookValue   + pst::rookTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteQueensBB)  whiteEval += mQueenValue  + pst::queenTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteKingBB)    whiteEval += mKingValue   + pst::kingTable[63 - square]; // here check if pawns are near the king (shield)
          
-        else if (BB::boardSquares[square] & board->blackPawnsBB)   blackEval += mPawnValue   + pst::pawnTable[square];
-        else if (BB::boardSquares[square] & board->blackKnightsBB) blackEval += mKnightValue + pst::knightTable[square];
-        else if (BB::boardSquares[square] & board->blackBishopsBB) blackEval += mBishopValue + pst::bishopTable[square];
-        else if (BB::boardSquares[square] & board->blackRooksBB)   blackEval += mRookValue   + pst::rookTable[square];
-        else if (BB::boardSquares[square] & board->blackQueensBB)  blackEval += mQueenValue  + pst::queenTable[square];
-        else if (BB::boardSquares[square] & board->blackKingBB)    blackEval += mKingValue   + pst::kingTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += mPawnValue   + pst::pawnTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += mKnightValue + pst::knightTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += mBishopValue + pst::bishopTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += mRookValue   + pst::rookTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += mQueenValue  + pst::queenTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackKingBB)    blackEval += mKingValue   + pst::kingTable[square];
     }
     
     return whiteEval - blackEval;
 }
 
+// this function is used to sort the moves. we need it to be called for every iteration of the move loop
+// because we only want to swap the moves that are important to us (and not sort the entire move vector,
+// as that would result in us sorting lots of moves we would never even look at, wasiting lots of time)
 void MILK::selectMove(std::vector<MoveData>& moves, Byte startIndex)
 {
     for (int i = startIndex + 1; i < moves.size(); i++)
@@ -89,7 +92,7 @@ void MILK::assignMoveScores(Board* board, std::vector<MoveData>& moves, Byte ply
             moves[i].moveScore += MilkConstants::MVV_LVA_OFFSET + MVV_LVATable[getMVV_LVAPieceType(board, moves[i].capturedPieceBB)]
                                                                               [getMVV_LVAPieceType(board, moves[i].pieceBB)];
         else // move is quiet
-            for (int j = 0; i < MilkConstants::MAX_KILLER_MOVES; j++)
+            for (int j = 0; j < MilkConstants::MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
                 {
                     moves[i].moveScore += MilkConstants::MVV_LVA_OFFSET - MilkConstants::KILLER_MOVE_SCORE;
@@ -113,11 +116,11 @@ void MILK::insertKillerMove(MoveData& move, Byte ply)
 
 MILK::MVV_LVAPieceTypes MILK::getMVV_LVAPieceType(Board* board, Bitboard* bb)
 {
-    if      (bb == &board->whitePawnsBB   || bb == &board->blackPawnsBB)   return MVV_LVAPieceTypes::PAWN;
-    else if (bb == &board->whiteKnightsBB || bb == &board->blackKnightsBB) return MVV_LVAPieceTypes::KNIGHT;
-    else if (bb == &board->whiteBishopsBB || bb == &board->blackBishopsBB) return MVV_LVAPieceTypes::BISHOP;
-    else if (bb == &board->whiteRooksBB   || bb == &board->blackRooksBB)   return MVV_LVAPieceTypes::ROOK;
-    else if (bb == &board->whiteQueensBB  || bb == &board->blackQueensBB)  return MVV_LVAPieceTypes::QUEEN;
+    if      (bb == &board->currentPosition.whitePawnsBB   || bb == &board->currentPosition.blackPawnsBB)   return MVV_LVAPieceTypes::PAWN;
+    else if (bb == &board->currentPosition.whiteKnightsBB || bb == &board->currentPosition.blackKnightsBB) return MVV_LVAPieceTypes::KNIGHT;
+    else if (bb == &board->currentPosition.whiteBishopsBB || bb == &board->currentPosition.blackBishopsBB) return MVV_LVAPieceTypes::BISHOP;
+    else if (bb == &board->currentPosition.whiteRooksBB   || bb == &board->currentPosition.blackRooksBB)   return MVV_LVAPieceTypes::ROOK;
+    else if (bb == &board->currentPosition.whiteQueensBB  || bb == &board->currentPosition.blackQueensBB)  return MVV_LVAPieceTypes::QUEEN;
     else return MVV_LVAPieceTypes::KING;
 }
 
@@ -127,7 +130,7 @@ int MILK::calculateExtension(Board* board, Colour side)
 
 
     // check extensions
-    Bitboard kingBB = side == SIDE_WHITE ? board->whiteKingBB : board->blackKingBB;
+    Bitboard kingBB = side == SIDE_WHITE ? board->currentPosition.whiteKingBB : board->currentPosition.blackKingBB;
     Byte kingSquare = board->computedKingSquare(kingBB);
     if (board->squareAttacked(kingSquare, !side))
         return 1;
@@ -155,8 +158,6 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
 
     if (standPat > alpha)
         alpha = standPat;
-
-    //alpha = std::max(standPat, alpha);
 
     if (alpha >= beta)
         return beta;
@@ -209,11 +210,14 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
         // if makemove is legal (i.e. wouldn't result in a check)
         if (board->makeMove(&moves[i]))
         {
+            if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
+                board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
+
             int eval = -negamax(board, depth - 1 + calculateExtension(board, side), !side, -beta, -alpha , ply + 1);
             board->unmakeMove(&moves[i]);
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
-            if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && depth == mDepth)
+            if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
                 mMoveToMake = moves[i];
 
             maxEval = std::max(maxEval, eval);

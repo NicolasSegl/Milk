@@ -5,6 +5,8 @@
 #include "Bitboard.h"
 #include "MoveGenerator.h"
 #include "MoveData.h"
+#include "ChessPosition.h"
+#include "TranspositionTable.h"
 
 class Board
 {
@@ -26,51 +28,19 @@ public:
 		BLACK_KING
 	};
 
-	// white piece bitboards
-	Bitboard whitePiecesBB;
-	Bitboard whitePawnsBB;
-	Bitboard whiteRooksBB;
-	Bitboard whiteKnightsBB;
-	Bitboard whiteBishopsBB;
-	Bitboard whiteQueensBB;
-	Bitboard whiteKingBB;
-
-	// black piece bitboards
-	Bitboard blackPiecesBB;
-	Bitboard blackPawnsBB;
-	Bitboard blackRooksBB;
-	Bitboard blackKnightsBB;
-	Bitboard blackBishopsBB;
-	Bitboard blackQueensBB;
-	Bitboard blackKingBB;
-
-	//Bitboard blackAttackBB = 0;
-	//Bitboard whiteAttackBB = 0;
-	Bitboard occupiedBB   = 0;
-	Bitboard emptyBB      = 0;
-	Bitboard enPassantBB  = 0;
-    // defence tables
-    
-    Byte castlePrivileges;
+	ChessPosition currentPosition;
     
 private:
 	Bitboard mAttackTable[64]{ 0 };
 
+	//::vector<ChessPosition> mPositionHistory; // pass this into outcomehandler
 	std::vector<MoveData> mWhiteMoves;
 	std::vector<MoveData> mBlackMoves;
 
     MoveGenerator mMoveGenerator;
-
-	// compare which moves are defending a piece of their own :D
-	// by separating all valid moves with those moves that attack pieces, we can hasten the search algorithm. consider moves that take first
-	// middle of the board bitboards (to encourage control of center) 4x4 grid in middle maybe?
-	// array of 64 bitboards. each with exactly 1 square set to 1. could be very useful
-	// make them all constats. for initializing the bitboards ?
+	TranspositionTable mTranspositionTable;
 
 	void setBitboards();
-	Bitboard* getPieceBitboard(Byte square, Colour side = -1); // -1 indicates that no value was passed in
-
-    void setCastlePrivileges(MoveData* castleMoveData, bool isKing);
 	void setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveData* rookMD);
 	bool makeCastleMove(MoveData* moveData);
 

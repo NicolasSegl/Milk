@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <random>
 
 // initialize all of the default values for the bitboard
 void Board::setBitboards()
@@ -10,27 +11,29 @@ void Board::setBitboards()
 	/* setting starting positions of all pieces on the board */
 
 	// white pieces
-	whitePawnsBB   = BB::Constants::cWPawnsStartBB;
-	whiteRooksBB   = BB::Constants::cWRooksStartBB;
-	whiteKnightsBB = BB::Constants::cWKnightsStartBB;
-	whiteBishopsBB = BB::Constants::cWBishopsStartBB;
-	whiteQueensBB  = BB::Constants::cWQueensStartBB;
-	whiteKingBB    = BB::Constants::cWKingStartBB;
-	whitePiecesBB  = whitePawnsBB | whiteRooksBB | whiteKnightsBB | whiteBishopsBB | whiteQueensBB | whiteKingBB;
+	currentPosition.whitePawnsBB   = BB::Constants::cWPawnsStartBB;
+	currentPosition.whiteRooksBB   = BB::Constants::cWRooksStartBB;
+	currentPosition.whiteKnightsBB = BB::Constants::cWKnightsStartBB;
+	currentPosition.whiteBishopsBB = BB::Constants::cWBishopsStartBB;
+	currentPosition.whiteQueensBB  = BB::Constants::cWQueensStartBB;
+	currentPosition.whiteKingBB    = BB::Constants::cWKingStartBB;
+	currentPosition.whitePiecesBB  = currentPosition.whitePawnsBB | currentPosition.whiteRooksBB | currentPosition.whiteKnightsBB | 
+									 currentPosition.whiteBishopsBB | currentPosition.whiteQueensBB | currentPosition.whiteKingBB;
 
 	// black pieces
-	blackPawnsBB   = BB::Constants::cBPawnsStartBB;
-	blackRooksBB   = BB::Constants::cBRooksStartBB;
-	blackKnightsBB = BB::Constants::cBKnightsStartBB;
-	blackBishopsBB = BB::Constants::cBBishopsStartBB;
-	blackQueensBB  = BB::Constants::cBQueensStartBB;
-	blackKingBB    = BB::Constants::cBKingStartBB;
-	blackPiecesBB  = blackPawnsBB | blackRooksBB | blackKnightsBB | blackBishopsBB | blackQueensBB | blackKingBB;
+	currentPosition.blackPawnsBB   = BB::Constants::cBPawnsStartBB;
+	currentPosition.blackRooksBB   = BB::Constants::cBRooksStartBB;
+	currentPosition.blackKnightsBB = BB::Constants::cBKnightsStartBB;
+	currentPosition.blackBishopsBB = BB::Constants::cBBishopsStartBB;
+	currentPosition.blackQueensBB  = BB::Constants::cBQueensStartBB;
+	currentPosition.blackKingBB    = BB::Constants::cBKingStartBB;
+	currentPosition.blackPiecesBB  = currentPosition.blackPawnsBB | currentPosition.blackRooksBB | currentPosition.blackKnightsBB | 
+									 currentPosition.blackBishopsBB | currentPosition.blackQueensBB | currentPosition.blackKingBB;
 
-    occupiedBB = whitePiecesBB | blackPiecesBB;
-    emptyBB = ~occupiedBB;
+	currentPosition.occupiedBB = currentPosition.whitePiecesBB | currentPosition.blackPiecesBB;
+	currentPosition.emptyBB = ~currentPosition.occupiedBB;
 
-    castlePrivileges = ~(0); // full priveleges for both sides at the start of the game
+	currentPosition.castlePrivileges = ~(0); // full priveleges for both sides at the start of the game
 }
 
 void Board::init()
@@ -60,19 +63,19 @@ void Board::setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveDa
 
     if (castleMoveData->side == SIDE_WHITE)
     {
-        kingMD->pieceBB  = &whiteKingBB;
-        kingMD->colourBB = &whitePiecesBB;
+        kingMD->pieceBB  = &currentPosition.whiteKingBB;
+        kingMD->colourBB = &currentPosition.whitePiecesBB;
 
-        rookMD->pieceBB  = &whiteRooksBB;
-        rookMD->colourBB = &whitePiecesBB;
+        rookMD->pieceBB  = &currentPosition.whiteRooksBB;
+        rookMD->colourBB = &currentPosition.whitePiecesBB;
     }
     else // the move is from the black side
     {
-        kingMD->pieceBB  = &blackKingBB;
-        kingMD->colourBB = &blackPiecesBB;
+        kingMD->pieceBB  = &currentPosition.blackKingBB;
+        kingMD->colourBB = &currentPosition.blackPiecesBB;
 
-        rookMD->pieceBB  = &blackRooksBB;
-        rookMD->colourBB = &blackPiecesBB;
+        rookMD->pieceBB  = &currentPosition.blackRooksBB;
+        rookMD->colourBB = &currentPosition.blackPiecesBB;
     }
 }
 
@@ -129,8 +132,8 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 			*moveData->capturedPieceBB ^= target; // only the target's square will have changed
 			*moveData->capturedColourBB ^= target; // only the target's square will have changed
 
-			occupiedBB ^= origin; // only the origin square is no longer occupied
-			emptyBB	   ^= origin; // only the origin square is no longer occupied
+			currentPosition.occupiedBB ^= origin; // only the origin square is no longer occupied
+			currentPosition.emptyBB	   ^= origin; // only the origin square is no longer occupied
 		}
 		else
 		{
@@ -138,14 +141,14 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 			Bitboard capturedPieceBB = moveData->side == SIDE_WHITE ? (target >> 8) : (target << 8);
 			*moveData->capturedPieceBB  ^= capturedPieceBB;
 			*moveData->capturedColourBB ^= capturedPieceBB;
-			occupiedBB ^= origin | capturedPieceBB | target; // get rid of the origin, the captured piece, and fill in where the pawn once was
-			emptyBB	   ^= origin | capturedPieceBB | target;
+			currentPosition.occupiedBB ^= origin | capturedPieceBB | target; // get rid of the origin, the captured piece, and fill in where the pawn once was
+			currentPosition.emptyBB	   ^= origin | capturedPieceBB | target;
 		}
 	}
 	else
 	{
-		occupiedBB ^= originTarget;
-		emptyBB	   ^= originTarget;
+		currentPosition.occupiedBB ^= originTarget;
+		currentPosition.emptyBB	   ^= originTarget;
 	}
 }
 
@@ -160,54 +163,59 @@ Byte Board::computedKingSquare(Bitboard kingBB)
 
 bool Board::squareAttacked(Byte square, Colour attackingSide)
 {
-    Bitboard opPawnsBB = attackingSide   == SIDE_WHITE ? whitePawnsBB : blackPawnsBB;
+    Bitboard opPawnsBB = attackingSide   == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
 	// this is looking at the tiles that can be attacked FROM THE POSITION OF THE KING, IF IT WERE A PAWN
 	// but we need to look at where the king could be attacked from (that pawn would be +- 7 or +- 9 from the king's pos)
     if (mMoveGenerator.pawnAttackLookupTable[attackingSide][square] & opPawnsBB) return true; // it's here to fix the king putting itself into check 
     
-    Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? whiteKnightsBB : blackKnightsBB;
+    Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;
     if (mMoveGenerator.knightLookupTable[square] & opKnightsBB)                  return true;
     
-    Bitboard opKingsBB = attackingSide    == SIDE_WHITE ? whiteKingBB : blackKingBB;
+    Bitboard opKingsBB = attackingSide    == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB;
     if (mMoveGenerator.kingLookupTable[square] & opKingsBB)                      return true;
     
-    Bitboard opBishopsQueensBB = attackingSide == SIDE_WHITE ? whiteBishopsBB | whiteQueensBB : blackBishopsBB | blackQueensBB;
+    Bitboard opBishopsQueensBB = attackingSide == SIDE_WHITE ? currentPosition.whiteBishopsBB | currentPosition.whiteQueensBB  
+															 : currentPosition.blackBishopsBB | currentPosition.blackQueensBB;
     // we need the queen lookup table
     // but instead a bishop lookuptable and a rook lookup table!
-    Bitboard enemyPieces    = attackingSide == SIDE_WHITE ? whitePiecesBB : blackPiecesBB;
-    Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? blackPiecesBB : whitePiecesBB;
+    Bitboard enemyPieces    = attackingSide == SIDE_WHITE ? currentPosition.whitePiecesBB : currentPosition.blackPiecesBB;
+    Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
     if (mMoveGenerator.computePseudoBishopMoves(square, enemyPieces, friendlyPieces) & opBishopsQueensBB) return true;
     
-    Bitboard opRooksQueens = attackingSide == SIDE_WHITE ? whiteRooksBB | whiteQueensBB : blackRooksBB | blackQueensBB;
+    Bitboard opRooksQueens = attackingSide == SIDE_WHITE ? currentPosition.whiteRooksBB | currentPosition.whiteQueensBB  
+														 : currentPosition.blackRooksBB | currentPosition.blackQueensBB;
     if (mMoveGenerator.computePseudoRookMoves(square, enemyPieces, friendlyPieces) & opRooksQueens) return true;
     
     return false;
 }
 
+// the ai 
 bool Board::makeMove(MoveData* moveData)
 {
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
 	{
 		if (makeCastleMove(moveData))
 		{
-			castlePrivileges &= ~moveData->castlePrivilegesRevoked;
+			currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 			return true;
 		}
 		else
 			return false;
 	}
 
-	castlePrivileges &= ~moveData->castlePrivilegesRevoked;
+	currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 
-	enPassantBB = 0;
-	if (moveData->pieceBB == &whitePawnsBB && moveData->targetSquare - moveData->originSquare == 16) // if move is en passant
-		enPassantBB |= BB::boardSquares[moveData->targetSquare - 8];
-	else if (moveData->pieceBB == &blackPawnsBB && moveData->originSquare - moveData->targetSquare == 16)
-		enPassantBB |= BB::boardSquares[moveData->targetSquare + 8];
+	currentPosition.enPassantBB = 0;
+	if (moveData->pieceBB == &currentPosition.whitePawnsBB && moveData->targetSquare - moveData->originSquare == 16) // if move is en passant
+		currentPosition.enPassantBB |= BB::boardSquares[moveData->targetSquare - 8];
+	else if (moveData->pieceBB == &currentPosition.blackPawnsBB && moveData->originSquare - moveData->targetSquare == 16)
+	{
+		currentPosition.enPassantBB |= BB::boardSquares[moveData->targetSquare + 8];
+	}
 
 	updateBitboardWithMove(moveData);
 
-	Byte kingSquare = computedKingSquare(moveData->side == SIDE_WHITE ? whiteKingBB : blackKingBB);
+	Byte kingSquare = computedKingSquare(moveData->side == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB);
 
 	if (squareAttacked(kingSquare, !moveData->side))
 	{
@@ -223,19 +231,18 @@ bool Board::unmakeMove(MoveData* moveData)
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
 	{
 		makeCastleMove(moveData);
-		// this needs to somehow give perms back?
-		castlePrivileges ^= moveData->castlePrivilegesRevoked;
+		currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
 		return true;
 	}
     
-	castlePrivileges ^= moveData->castlePrivilegesRevoked;
-	enPassantBB      = moveData->enPassantBB;
+	currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
+	currentPosition.enPassantBB       = moveData->enPassantBB;
     
 	undoPromotion(moveData);
 	
 	updateBitboardWithMove(moveData);
 
-	return false;
+	return true;
 }
 
 void Board::undoPromotion(MoveData* moveData)
@@ -244,26 +251,26 @@ void Board::undoPromotion(MoveData* moveData)
 	{
 		case MoveData::EncodingBits::QUEEN_PROMO:
 		{
-			if (moveData->side == SIDE_WHITE) whiteQueensBB ^= BB::boardSquares[moveData->targetSquare];
-			else							  blackQueensBB ^= BB::boardSquares[moveData->targetSquare];
+			if (moveData->side == SIDE_WHITE) currentPosition.whiteQueensBB ^= BB::boardSquares[moveData->targetSquare];
+			else							  currentPosition.blackQueensBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
 		case MoveData::EncodingBits::BISHOP_PROMO:
 		{
-			if (moveData->side == SIDE_WHITE) whiteBishopsBB ^= BB::boardSquares[moveData->targetSquare];
-			else							  blackBishopsBB ^= BB::boardSquares[moveData->targetSquare];
+			if (moveData->side == SIDE_WHITE) currentPosition.whiteBishopsBB ^= BB::boardSquares[moveData->targetSquare];
+			else							  currentPosition.blackBishopsBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
 		case MoveData::EncodingBits::ROOK_PROMO:
 		{
-			if (moveData->side == SIDE_WHITE) whiteRooksBB ^= BB::boardSquares[moveData->targetSquare];
-			else							  blackRooksBB ^= BB::boardSquares[moveData->targetSquare];
+			if (moveData->side == SIDE_WHITE) currentPosition.whiteRooksBB ^= BB::boardSquares[moveData->targetSquare];
+			else							  currentPosition.blackRooksBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
 		case MoveData::EncodingBits::KNIGHT_PROMO:
 		{
-			if (moveData->side == SIDE_WHITE) whiteKnightsBB ^= BB::boardSquares[moveData->targetSquare];
-			else							  blackKnightsBB ^= BB::boardSquares[moveData->targetSquare];
+			if (moveData->side == SIDE_WHITE) currentPosition.whiteKnightsBB ^= BB::boardSquares[moveData->targetSquare];
+			else							  currentPosition.blackKnightsBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
 		default:
@@ -272,8 +279,8 @@ void Board::undoPromotion(MoveData* moveData)
 	if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO || moveData->moveType == MoveData::EncodingBits::ROOK_PROMO ||
 		moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO || moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)
 	{
-		if (moveData->side == SIDE_WHITE) whitePawnsBB ^= BB::boardSquares[moveData->targetSquare];
-		else							  blackPawnsBB ^= BB::boardSquares[moveData->targetSquare];
+		if (moveData->side == SIDE_WHITE) currentPosition.whitePawnsBB ^= BB::boardSquares[moveData->targetSquare];
+		else							  currentPosition.blackPawnsBB ^= BB::boardSquares[moveData->targetSquare];
 	}
 }
 
@@ -283,21 +290,21 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 
 	if (md->side == SIDE_WHITE)
 	{
-		whitePawnsBB ^= BB::boardSquares[md->targetSquare];
+		currentPosition.whitePawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		whiteQueensBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	whiteRooksBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) whiteBishopsBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) whiteKnightsBB |= BB::boardSquares[md->targetSquare];
+		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		currentPosition.whiteQueensBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.whiteRooksBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.whiteBishopsBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.whiteKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
 	else // side == SIDE_BLACK
 	{
-		blackPawnsBB ^= BB::boardSquares[md->targetSquare];
+		currentPosition.blackPawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		blackQueensBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	blackRooksBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) blackBishopsBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) blackKnightsBB |= BB::boardSquares[md->targetSquare];
+		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		currentPosition.blackQueensBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.blackRooksBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.blackBishopsBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
 }
 

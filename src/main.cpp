@@ -1,9 +1,14 @@
 #include "ChessGame.h"
 
+#include <random>
+#include <time.h>
+
 // I LOVE YOU CHARLOTTE <3 I LOVE YOU MORE!!!!
 
 int main()
 {
+	std::srand(time(NULL));
+
 	ChessGame cg;
 	cg.runGUI();
 	return 0;
@@ -12,7 +17,8 @@ int main()
 // TODO
 // king can put itself into check (if its a pawn attacking the square)
 //	this is because it is just checking where the pawns we have can attack, so &ing it doesnt actually do anything
-// the ai cannot promote pieces! this will defo fuck with it's ability to use pawns well
+// before transposition table, do drawing/checkmate. before/after that (but before transposition table) fix the kind putting itself in checm Board.cpp line 165ish
+// TRANSPOSITION TABLE
 // add delta pruning
 // and ENDGAME PLAY
 // transposition table
@@ -38,4 +44,6 @@ int main()
 // choosing what to upgrade a pawn to
 // undoing ai moves
 
-// it would seem that the quiscience search is like minimax, only it considers only moves that capture, promote, or put a king in check
+// when checking draws, first check if all black pieces are even in the same spot and if all black pieces are in the same spot
+// this can be done by comparing the values of blackpiecesbb and whitepiecesbb
+// then check the half move counter
