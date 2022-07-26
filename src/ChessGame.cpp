@@ -82,6 +82,7 @@ bool ChessGame::makeMove(MoveData* moveData)
 	// here check for any outcomes (draw or a win)
     if (mBoard.makeMove(moveData))
     {
+		//std::cout << "privs: " << (int)mBoard.currentPosition.castlePrivileges << std::endl;
         mGUI.setMoveColours(moveData);
         mSideToMove = !mSideToMove;
 

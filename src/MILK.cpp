@@ -18,8 +18,16 @@ MILK::MILK()
     mPawnValue   = 100;
     
     // by default
-    mSide = SIDE_WHITE;
+    mSide = SIDE_BLACK;
     mDepth = 6;
+    mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
+    clearTranspositionTable();
+}
+
+void MILK::clearTranspositionTable()
+{
+    for (int i = 0; i < mTranspositionTableSize; i++)
+        mTranspositionTable[i].hashFlag = TranspositionHashEntry::NONEXISTENT;
 }
 
 MoveData MILK::computeMove(Board* board)
@@ -27,9 +35,11 @@ MoveData MILK::computeMove(Board* board)
     mNodes = 0;
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
     sf::Clock clock;
-    std::cout << "to be eval: " << negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
-   // negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
-    std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
+    //std::cout << "to be eval: " << negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
+    std::cout << "privileges: " << (int)board->currentPosition.castlePrivileges << std::endl;
+    // okay so it is removing all ability to castle from just a single move. awesome bro lit a ffffff
+    negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
+    //std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
     return mMoveToMake;
 }
 
@@ -185,17 +195,34 @@ int MILK::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte p
     return alpha;
 }
 
+void MILK::insertTranspositionEntry(TranspositionHashEntry* hashEntry, int maxEval, int ogAlpha, int beta)
+{
+    // replacement scheme. let's just replace whenever the depth is greater how about?
+    // if we ever get to this point in the search, however, we will replace
+    // also, if we were going to search deeper than to whatever depth the transposition went to,
+    // we need to disregard it (and just use the best move first)
+
+    // at first, assume that the evaluation recorded in the entry is exact (i.e. derived directly from MILK::evaluatePosition)
+    hashEntry->hashFlag = TranspositionHashEntry::EXACT;
+     
+    // if the maximum evaluation for this transposition was NOT better than move found in a sibling node
+    if (maxEval < ogAlpha) hashEntry->hashFlag = TranspositionHashEntry::UPPER_BOUND;
+    // if the maximum evaluation for this transposition was too 
+    if (maxEval >= beta)   hashEntry->hashFlag = TranspositionHashEntry::LOWER_BOUND;
+
+    mTranspositionTable[hashEntry->zobristKey % mTranspositionTableSize] = *hashEntry;
+}
+
 int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply)
 {
     if (depth == 0)
         return quietMoveSearch(board, side, alpha, beta, ply);
-        //return evaluatePosition(board);
 
-    // okay so quiet move search is messing up the repetition stuff somehow?
-
-    mNodes++;
     if (Outcomes::isThreefoldRepetition(board->getZobristKeyHistory(), board->getCurrentPly()))
         return 0;
+
+    // used for determining the transposition table entry's flag for this call to negamax
+    int ogAlpha = alpha; 
 
     board->calculateSideMoves(side);
     std::vector<MoveData> moves = board->getMoves(side);
@@ -210,6 +237,11 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
         // if makemove is legal (i.e. wouldn't result in a check)
         if (board->makeMove(&moves[i]))
         {
+            if (moves[i].castlePrivilegesRevoked > 0)
+            {
+                int here = 5;
+            }
+
             if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
                 board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
 
@@ -229,6 +261,8 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
             }
         }
     }
+
+    
 
     return alpha;
 }

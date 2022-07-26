@@ -5,6 +5,7 @@
 #include "Bitboard.h"
 #include "MoveData.h"
 #include "Board.h"
+#include "TranspositionHashEntry.h"
 
 namespace MilkConstants
 {
@@ -50,6 +51,11 @@ private:
     
     MoveData mKillerMoves[MilkConstants::MAX_PLY][2]{ {}, {} }; // maximum of 2 killer moves per ply
     void insertKillerMove(MoveData& move, Byte ply);
+
+    int mTranspositionTableSize = 20000000;
+    TranspositionHashEntry* mTranspositionTable;
+    void clearTranspositionTable();
+    void insertTranspositionEntry(TranspositionHashEntry* hashEntry, int maxEval, int ogAlpha, int beta);
     
 	int mDepth;
     int mKingValue, mQueenValue, mRookValue, mBishopValue, mKnightValue, mPawnValue;

@@ -22,11 +22,11 @@ int main()
 // make structs/classes smaller in size
 // add delta pruning
 // and ENDGAME PLAY
+// pawn hash table (hashing the pawn evaluations function)
 // switch statement Board::promoteTo
 // pawn structure https://www.chessprogramming.org/Pawn_Pattern_and_Properties
 // move ordering
 //  historic heuristic
-// delta pruning
 //	consider also pawn promotions/advances
 // null moves after this ! ! ! after quiet move search
 // futility pruning
