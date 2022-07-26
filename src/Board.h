@@ -6,30 +6,10 @@
 #include "MoveGenerator.h"
 #include "MoveData.h"
 #include "ChessPosition.h"
-#include "TranspositionTable.h"
+#include "ZobristKeyGenerator.h"
 
 class Board
-{
-public:
-	enum PieceType
-	{
-		WHITE_PAWN,
-		WHITE_ROOK,
-		WHITE_BISHOP,
-		WHITE_QUEEN,
-		WHITE_KNIGHT,
-		WHITE_KING,
-
-		BLACK_PAWN,
-		BLACK_ROOK,
-		BLACK_BISHOP,
-		BLACK_QUEEN,
-		BLACK_KNIGHT,
-		BLACK_KING
-	};
-
-	ChessPosition currentPosition;
-    
+{    
 private:
 	Bitboard mAttackTable[64]{ 0 };
 
@@ -38,21 +18,33 @@ private:
 	std::vector<MoveData> mBlackMoves;
 
     MoveGenerator mMoveGenerator;
-	TranspositionTable mTranspositionTable;
+
+	uint64_t mCurrentZobristKey;
+	ZobristKeyGenerator mZobristKeyGenerator;
+	ZobristKey mZobristKeyHistory[1000];
+
+	int ply;
 
 	void setBitboards();
+
+	// functions for making/unmaking moves
 	void setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveData* rookMD);
 	bool makeCastleMove(MoveData* moveData);
-
+	void setEnPassantSquares(MoveData* moveData);
 	void updateBitboardWithMove(MoveData* moveData);
 	void undoPromotion(MoveData* moveData);
+
+	void insertMoveIntoHistory();
+	void deleteMoveFromHistory();
 
 public:
 	Board() {}
 
+	ChessPosition currentPosition;
+
 	void init();
 	bool makeMove(MoveData* moveData);
-	bool unmakeMove(MoveData* moveData);
+	bool unmakeMove(MoveData* moveData, bool updateZobristHistory = true);
 	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
 
 	void calculateSideMoves(Colour side);
@@ -61,7 +53,9 @@ public:
 	Byte computedKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);
 
-	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;     }
-	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;     }
-    std::vector<MoveData>& getMoves(Colour side);
+	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;        }
+	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;        }
+	ZobristKey* getZobristKeyHistory()	   { return mZobristKeyHistory; }
+	short getCurrentPly()				   { return ply;				}
+	std::vector<MoveData>& getMoves(Colour side);
 };

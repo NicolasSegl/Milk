@@ -1,5 +1,6 @@
 #include "MILK.h"
 #include "SquarePieceTables.h"
+#include "Outcomes.h"
 
 #include <iostream>
 #include <limits>
@@ -17,7 +18,7 @@ MILK::MILK()
     mPawnValue   = 100;
     
     // by default
-    mSide = SIDE_BLACK;
+    mSide = SIDE_WHITE;
     mDepth = 6;
 }
 
@@ -26,15 +27,9 @@ MoveData MILK::computeMove(Board* board)
     mNodes = 0;
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
     sf::Clock clock;
-    //std::cout << "to be eval: " << minimax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
     std::cout << "to be eval: " << negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0) << std::endl;
-    std::cout << "current eval: " << evaluatePosition(board) << std::endl;
-    //negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
+   // negamax(board, mDepth, mSide, -std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0);
     std::cout << "time to calculate move: " << clock.getElapsedTime().asSeconds() << std::endl;
-
-    std::cout << "number of nodes: " << mNodes << std::endl;
-    //std::cout << "number of regular nodes: " << mNodes << std::endl;
-    //std::cout << "number of quiet nodes: " << mQuietNodes << std::endl;
     return mMoveToMake;
 }
 
@@ -194,8 +189,13 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
 {
     if (depth == 0)
         return quietMoveSearch(board, side, alpha, beta, ply);
+        //return evaluatePosition(board);
+
+    // okay so quiet move search is messing up the repetition stuff somehow?
 
     mNodes++;
+    if (Outcomes::isThreefoldRepetition(board->getZobristKeyHistory(), board->getCurrentPly()))
+        return 0;
 
     board->calculateSideMoves(side);
     std::vector<MoveData> moves = board->getMoves(side);

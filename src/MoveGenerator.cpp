@@ -1,6 +1,8 @@
 #include "MoveGenerator.h"
 #include "Board.h"
 
+#include <iostream>
+
 void MoveGenerator::init()
 {
     for (int pieceLoc = 0; pieceLoc < 64; pieceLoc++)
@@ -375,7 +377,7 @@ Bitboard MoveGenerator::calculatePsuedoMove(Board* board, MoveData* md, Bitboard
         return computePseudoKnightMoves(md->originSquare, *md->colourBB);
 
     else if ((pieceBB & board->currentPosition.whitePawnsBB) || (pieceBB & board->currentPosition.blackPawnsBB))
-        return computePseudoPawnMoves(md->originSquare, md->side, *md->capturedColourBB, board->currentPosition.emptyBB, board->currentPosition.enPassantBB);
+        return computePseudoPawnMoves(md->originSquare, md->side, *md->capturedColourBB, board->currentPosition.emptyBB, BB::boardSquares[board->currentPosition.enPassantSquare]);
 
     else if ((pieceBB & board->currentPosition.whiteBishopsBB) || (pieceBB & board->currentPosition.blackBishopsBB))
         return computePseudoBishopMoves(md->originSquare, *md->capturedColourBB, *md->colourBB);
@@ -425,26 +427,28 @@ bool MoveGenerator::doesCaptureAffectCastle(Board* board, MoveData* md)
 
 void MoveGenerator::setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md)
 {
-    if (BB::boardSquares[square] & board->currentPosition.enPassantBB)
-    {
-        if (pieceMovesBB & board->currentPosition.enPassantBB)
+    if (board->currentPosition.enPassantSquare < 64)
+        if (BB::boardSquares[square] & BB::boardSquares[board->currentPosition.enPassantSquare])
         {
-            if (md->pieceBB == &board->currentPosition.whitePawnsBB)
+            if (pieceMovesBB & BB::boardSquares[board->currentPosition.enPassantSquare])
             {
-                md->capturedPieceBB = getPieceBitboard(board, square - 8, SIDE_BLACK);
-                md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
-                md->enPassantBB = board->currentPosition.enPassantBB;
-            }
-            else if (md->pieceBB == &board->currentPosition.blackPawnsBB)
-            {
-                md->capturedPieceBB = getPieceBitboard(board, square + 8, SIDE_WHITE);
-                md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
-                md->enPassantBB = board->currentPosition.enPassantBB;
+                if (md->pieceBB == &board->currentPosition.whitePawnsBB)
+                {
+                    md->capturedPieceBB = getPieceBitboard(board, square - 8, SIDE_BLACK);
+                    md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
+                    md->enPassantSquare = board->currentPosition.enPassantSquare;
+                }
+                else if (md->pieceBB == &board->currentPosition.blackPawnsBB)
+                {
+                    md->capturedPieceBB = getPieceBitboard(board, square + 8, SIDE_WHITE);
+                    md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
+                    md->enPassantSquare = board->currentPosition.enPassantSquare;
+                }
             }
         }
-    }
-    else if (board->currentPosition.enPassantBB)
-        md->enPassantBB = board->currentPosition.enPassantBB;
+
+    if (board->currentPosition.enPassantSquare < 64)
+        md->enPassantSquare = board->currentPosition.enPassantSquare;
 }
 
 void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly)

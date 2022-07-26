@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "Board.h"
+#include "Constants.h"
 #include "MoveData.h"
 
 struct UserInput
@@ -40,7 +41,7 @@ private:
 
 	int mLastSelectedSquare;
 
-	void drawPiece(sf::Vector2f pos, Board::PieceType spriteType);
+	void drawPiece(sf::Vector2f pos, PieceType::PieceType spriteType);
 	void createSquareSprites();
 
 public:

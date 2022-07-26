@@ -15,18 +15,18 @@ int main()
 }
 
 // TODO
-// king can put itself into check (if its a pawn attacking the square)
-//	this is because it is just checking where the pawns we have can attack, so &ing it doesnt actually do anything
-// before transposition table, do drawing/checkmate. before/after that (but before transposition table) fix the kind putting itself in checm Board.cpp line 165ish
+// before transposition table, do drawing/checkmate. before/after that (but before transposition table)
 // TRANSPOSITION TABLE
+// rename zobristkeygenerator
+// put more things in Constants.h?
+// make structs/classes smaller in size
 // add delta pruning
 // and ENDGAME PLAY
-// transposition table
+// switch statement Board::promoteTo
 // pawn structure https://www.chessprogramming.org/Pawn_Pattern_and_Properties
 // move ordering
-//  killer move heuristic!
 //  historic heuristic
-// quiscience search --- currently working on this
+// delta pruning
 //	consider also pawn promotions/advances
 // null moves after this ! ! ! after quiet move search
 // futility pruning

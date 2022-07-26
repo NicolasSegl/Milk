@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "MoveGenerator.h"
+#include "Outcomes.h"
 
 #include <iostream>
 #include <cmath>
@@ -32,8 +33,6 @@ void Board::setBitboards()
 
 	currentPosition.occupiedBB = currentPosition.whitePiecesBB | currentPosition.blackPiecesBB;
 	currentPosition.emptyBB = ~currentPosition.occupiedBB;
-
-	currentPosition.castlePrivileges = ~(0); // full priveleges for both sides at the start of the game
 }
 
 void Board::init()
@@ -41,6 +40,13 @@ void Board::init()
 	setBitboards();
 	BB::initialize();
 	mMoveGenerator.init();
+
+	mZobristKeyGenerator.initHashKeys();
+	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
+	ply = -1;
+	insertMoveIntoHistory();
+	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |
+		(Byte)CastlingPrivilege::BLACK_SHORT_CASTLE | (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
 }
 
 void Board::calculateSideMoves(Colour side)
@@ -60,6 +66,9 @@ void Board::setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveDa
 {
 	kingMD->originSquare = castleMoveData->originSquare;
 	kingMD->targetSquare = castleMoveData->targetSquare;
+	rookMD->setMoveType(MoveData::EncodingBits::CASTLE_HALF_MOVE);
+	kingMD->setMoveType(MoveData::EncodingBits::CASTLE_HALF_MOVE);
+	// fix these !
 
     if (castleMoveData->side == SIDE_WHITE)
     {
@@ -108,8 +117,19 @@ bool Board::makeCastleMove(MoveData* md)
     else
         return false;
 
-    makeMove(&kingMove);
-    makeMove(&rookMove);
+	// checking if the move is an unmake move by seeing if there is already a rook castled (i.e. in the same position that this move will take this rook)
+	// this works because unmaking castle moves uses this exact same routine and thanks to bit math it would undo the move 
+	if (BB::boardSquares[rookMove.targetSquare] & *rookMove.pieceBB)
+	{
+		unmakeMove(&kingMove);
+		unmakeMove(&rookMove);
+		return true;
+	}
+	else
+	{
+		makeMove(&kingMove);
+		makeMove(&rookMove);
+	}
 
     return true;
 }
@@ -163,10 +183,17 @@ Byte Board::computedKingSquare(Bitboard kingBB)
 
 bool Board::squareAttacked(Byte square, Colour attackingSide)
 {
-    Bitboard opPawnsBB = attackingSide   == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
-	// this is looking at the tiles that can be attacked FROM THE POSITION OF THE KING, IF IT WERE A PAWN
-	// but we need to look at where the king could be attacked from (that pawn would be +- 7 or +- 9 from the king's pos)
-    if (mMoveGenerator.pawnAttackLookupTable[attackingSide][square] & opPawnsBB) return true; // it's here to fix the king putting itself into check 
+	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
+
+	// this gets all of the diagonal attacks of the pawns
+	if (attackingSide == SIDE_WHITE)
+	{
+		if ((BB::boardSquares[square] & (opPawnsBB << 7)) || (BB::boardSquares[square] & (opPawnsBB << 9))) return true;
+	}
+	else
+	{
+		if ((BB::boardSquares[square] & (opPawnsBB >> 7)) || (BB::boardSquares[square] & (opPawnsBB >> 9))) return true;
+	}
     
     Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;
     if (mMoveGenerator.knightLookupTable[square] & opKnightsBB)                  return true;
@@ -189,64 +216,108 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
     return false;
 }
 
-// the ai 
+void Board::setEnPassantSquares(MoveData* moveData)
+{
+	currentPosition.enPassantSquare = 0;
+	if (moveData->pieceBB == &currentPosition.whitePawnsBB && moveData->targetSquare - moveData->originSquare == 16) // if move is en passant
+		currentPosition.enPassantSquare = moveData->targetSquare - 8;
+	else if (moveData->pieceBB == &currentPosition.blackPawnsBB && moveData->originSquare - moveData->targetSquare == 16)
+		currentPosition.enPassantSquare = moveData->targetSquare + 8;
+}
+
+// more moves are getting deleted than inserted. this should never happen.
+// i would guess it's because in makeMove, sometimes this function is never
+// called, however in unmakemove, it is called every time without fail?
+// but we only ever want to call it if it was called while making the move in the first place
+
+void Board::insertMoveIntoHistory()
+{
+	ply++;
+	mZobristKeyHistory[ply] = mCurrentZobristKey;
+}
+
+void Board::deleteMoveFromHistory()
+{
+	mZobristKeyHistory[ply] = 0;
+	ply--;
+}
+
 bool Board::makeMove(MoveData* moveData)
 {
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
 	{
-		if (makeCastleMove(moveData))
-		{
-			currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
-			return true;
-		}
-		else
+		if (!makeCastleMove(moveData))
 			return false;
 	}
+	else
+	{
+		updateBitboardWithMove(moveData);
+
+		Byte kingSquare = computedKingSquare(moveData->side == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB);
+
+		if (squareAttacked(kingSquare, !moveData->side))
+		{
+			// passing in false so that we do not update the zobrist key/history, as we never actually added it here
+			// this means that otherwise it would be removing the previous zobrist key, eventually giving negative 
+			// ply numbers and undefined behaviour
+			unmakeMove(moveData, false);
+			return false;
+		}
+	}
+
+	setEnPassantSquares(moveData);
 
 	currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
-
-	currentPosition.enPassantBB = 0;
-	if (moveData->pieceBB == &currentPosition.whitePawnsBB && moveData->targetSquare - moveData->originSquare == 16) // if move is en passant
-		currentPosition.enPassantBB |= BB::boardSquares[moveData->targetSquare - 8];
-	else if (moveData->pieceBB == &currentPosition.blackPawnsBB && moveData->originSquare - moveData->targetSquare == 16)
+	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE) // ctrl+f all MoveData::EncodingBits calls
 	{
-		currentPosition.enPassantBB |= BB::boardSquares[moveData->targetSquare + 8];
+		currentPosition.sideToMove = !currentPosition.sideToMove;
+		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
+		insertMoveIntoHistory();
 	}
-
-	updateBitboardWithMove(moveData);
-
-	Byte kingSquare = computedKingSquare(moveData->side == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB);
-
-	if (squareAttacked(kingSquare, !moveData->side))
-	{
-		unmakeMove(moveData);
-		return false;
-	}
+	else
+		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
 
 	return true;
 }
 
-bool Board::unmakeMove(MoveData* moveData)
+bool Board::unmakeMove(MoveData* moveData, bool updateZobristHistory)
 {
+	// undoing moves is no longer returning the taken pieces back ? 
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
-	{
 		makeCastleMove(moveData);
-		currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
-		return true;
+	else
+	{
+		undoPromotion(moveData);
+		updateBitboardWithMove(moveData);
 	}
-    
+
+	if (updateZobristHistory)
+		mCurrentZobristKey = mZobristKeyHistory[ply - 1];
+
+	currentPosition.enPassantSquare = moveData->enPassantSquare;
 	currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
-	currentPosition.enPassantBB       = moveData->enPassantBB;
-    
-	undoPromotion(moveData);
-	
-	updateBitboardWithMove(moveData);
+
+	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE) // ctrl+f all MoveData::EncodingBits calls
+	{
+		currentPosition.sideToMove = !currentPosition.sideToMove;
+		if (updateZobristHistory)
+			deleteMoveFromHistory();
+	}
 
 	return true;
 }
 
 void Board::undoPromotion(MoveData* moveData)
 {
+	if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO || moveData->moveType == MoveData::EncodingBits::ROOK_PROMO ||
+		moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO || moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)
+	{
+		if (moveData->side == SIDE_WHITE) currentPosition.whitePawnsBB ^= BB::boardSquares[moveData->targetSquare];
+		else							  currentPosition.blackPawnsBB ^= BB::boardSquares[moveData->targetSquare];
+	}
+	else
+		return;
+
 	switch (moveData->moveType)
 	{
 		case MoveData::EncodingBits::QUEEN_PROMO:
@@ -276,23 +347,18 @@ void Board::undoPromotion(MoveData* moveData)
 		default:
 			break;
 	}
-	if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO || moveData->moveType == MoveData::EncodingBits::ROOK_PROMO ||
-		moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO || moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)
-	{
-		if (moveData->side == SIDE_WHITE) currentPosition.whitePawnsBB ^= BB::boardSquares[moveData->targetSquare];
-		else							  currentPosition.blackPawnsBB ^= BB::boardSquares[moveData->targetSquare];
-	}
 }
 
 void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 {
 	md->setMoveType(promoteTo);
 
+	// make this a switch statement?
 	if (md->side == SIDE_WHITE)
 	{
 		currentPosition.whitePawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		currentPosition.whiteQueensBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.whiteQueensBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.whiteRooksBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.whiteBishopsBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.whiteKnightsBB |= BB::boardSquares[md->targetSquare];
@@ -301,7 +367,7 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 	{
 		currentPosition.blackPawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if (promoteTo == MoveData::EncodingBits::QUEEN_PROMO)		currentPosition.blackQueensBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.blackQueensBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.blackRooksBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.blackBishopsBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];

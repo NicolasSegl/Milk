@@ -31,17 +31,19 @@ struct MoveData
         KNIGHT_PROMO = 1 << 10,
         EN_PASSANT_SQUARE = 1 << 11,
         PAWN_PROMOTION = 1 << 12,
+        CASTLE_HALF_MOVE = 1 << 13, // for king and rook moves made for the sake of castling
     };
 
     // these must be pointers for the sake of incremental updating
-    Bitboard* pieceBB;
-    Bitboard* colourBB;
+    Bitboard* pieceBB  = nullptr;
+    Bitboard* colourBB = nullptr;
 
     // if these are not null pointers then a capture has taken place
     Bitboard* capturedPieceBB = nullptr;
     Bitboard* capturedColourBB = nullptr;
 
-    Bitboard enPassantBB = 0; // enPassantBB can only be certain values (squares on files 3 and 5), so a value of 0 indicates no en passant squares
+    // an en passant square value of >64 indicates that there are no en passant squares
+    Byte enPassantSquare = 100;
 
     Colour side;
 
@@ -60,7 +62,7 @@ struct MoveData
     {
         return originSquare == rightMD.originSquare && targetSquare == rightMD.targetSquare &&
                pieceBB == rightMD.pieceBB && colourBB == rightMD.colourBB &&
-               capturedPieceBB == rightMD.capturedPieceBB && enPassantBB == rightMD.enPassantBB &&
+               capturedPieceBB == rightMD.capturedPieceBB && enPassantSquare == rightMD.enPassantSquare &&
                castlePrivilegesRevoked == rightMD.castlePrivilegesRevoked && moveType == rightMD.moveType;
     }
 };

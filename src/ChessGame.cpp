@@ -1,4 +1,5 @@
 #include "ChessGame.h"
+#include "Outcomes.h"
 
 #include <iostream>
 

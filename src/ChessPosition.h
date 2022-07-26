@@ -31,11 +31,11 @@ struct ChessPosition
 
 	Bitboard occupiedBB  = 0;
 	Bitboard emptyBB	 = 0;
-	Bitboard enPassantBB = 0;
+	//Bitboard enPassantBB = 0;
 
 	Byte castlePrivileges;
 	Byte fiftyMoveCounter = 0;
-	Byte enPassantSquare;
+	Byte enPassantSquare  = 0;
 
 	Colour sideToMove;
 };
