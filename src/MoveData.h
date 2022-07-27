@@ -55,6 +55,7 @@ struct MoveData
     EncodingBits moveType = EncodingBits::INVALID;
     Byte castlePrivilegesRevoked = 0;
     Byte moveScore = 0;
+    int fiftyMoveCounter;
 
     void setMoveType(EncodingBits mt) { moveType = mt; }
 

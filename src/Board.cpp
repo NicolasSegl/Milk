@@ -43,7 +43,7 @@ void Board::init()
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	ply = -1;
+	mPly = -1;
 	insertMoveIntoHistory();
 	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |
 		(Byte)CastlingPrivilege::BLACK_SHORT_CASTLE | (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
@@ -232,14 +232,14 @@ void Board::setEnPassantSquares(MoveData* moveData)
 
 void Board::insertMoveIntoHistory()
 {
-	ply++;
-	mZobristKeyHistory[ply] = mCurrentZobristKey;
+	mPly++;
+	mZobristKeyHistory[mPly] = mCurrentZobristKey;
 }
 
 void Board::deleteMoveFromHistory()
 {
-	mZobristKeyHistory[ply] = 0;
-	ply--;
+	mZobristKeyHistory[mPly] = 0;
+	mPly--;
 }
 
 bool Board::makeMove(MoveData* moveData)
@@ -257,6 +257,7 @@ bool Board::makeMove(MoveData* moveData)
 
 		if (squareAttacked(kingSquare, !moveData->side))
 		{
+			currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 			// passing in false so that we do not update the zobrist key/history, as we never actually added it here
 			// this means that otherwise it would be removing the previous zobrist key, eventually giving negative 
 			// ply numbers and undefined behaviour
@@ -292,7 +293,7 @@ bool Board::unmakeMove(MoveData* moveData, bool updateZobristHistory)
 	}
 
 	if (updateZobristHistory)
-		mCurrentZobristKey = mZobristKeyHistory[ply - 1];
+		mCurrentZobristKey = mZobristKeyHistory[mPly - 1];
 
 	currentPosition.enPassantSquare = moveData->enPassantSquare;
 	currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;

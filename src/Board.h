@@ -23,7 +23,8 @@ private:
 	ZobristKeyGenerator mZobristKeyGenerator;
 	ZobristKey mZobristKeyHistory[1000];
 
-	int ply;
+	int mPly;
+	int mFiftyMoveCounter;
 
 	void setBitboards();
 
@@ -56,6 +57,6 @@ public:
 	std::vector<MoveData>& getWhiteMoves() { return mWhiteMoves;        }
 	std::vector<MoveData>& getBlackMoves() { return mBlackMoves;        }
 	ZobristKey* getZobristKeyHistory()	   { return mZobristKeyHistory; }
-	short getCurrentPly()				   { return ply;				}
+	short getCurrentPly()				   { return mPly;				}
 	std::vector<MoveData>& getMoves(Colour side);
 };

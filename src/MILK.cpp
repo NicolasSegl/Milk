@@ -237,11 +237,6 @@ int MILK::negamax(Board* board, int depth, Colour side, int alpha, int beta, Byt
         // if makemove is legal (i.e. wouldn't result in a check)
         if (board->makeMove(&moves[i]))
         {
-            if (moves[i].castlePrivilegesRevoked > 0)
-            {
-                int here = 5;
-            }
-
             if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
                 board->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
 
